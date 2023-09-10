@@ -4,10 +4,10 @@ import 'package:filterable/src/base_type_filterable.dart';
 /// that allows to filter projects by date
 class IntRangeFilter extends TypeRangeFilterable<int> {
   /// Creates a intFilter
-  IntRangeFilter({
+  IntRangeFilter(
     this.min,
     this.max,
-  });
+  );
 
   /// The minimum date to filter projects
   @override
@@ -23,8 +23,8 @@ class IntRangeFilter extends TypeRangeFilterable<int> {
     int? Function()? max,
   }) {
     return IntRangeFilter(
-      min: min != null ? min() : this.min,
-      max: max != null ? max() : this.max,
+      min != null ? min() : this.min,
+      max != null ? max() : this.max,
     );
   }
 }

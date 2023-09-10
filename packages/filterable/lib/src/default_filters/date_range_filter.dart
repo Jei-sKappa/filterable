@@ -4,10 +4,10 @@ import 'package:filterable/src/base_type_filterable.dart';
 /// that allows to filter projects by date
 class DateTimeRangeFilter extends TypeRangeFilterable<DateTime> {
   /// Creates a DateFilter
-  DateTimeRangeFilter({
+  DateTimeRangeFilter(
     this.min,
     this.max,
-  });
+  );
 
   /// The minimum date to filter projects
   @override
@@ -23,8 +23,8 @@ class DateTimeRangeFilter extends TypeRangeFilterable<DateTime> {
     DateTime? Function()? max,
   }) {
     return DateTimeRangeFilter(
-      min: min != null ? min() : this.min,
-      max: max != null ? max() : this.max,
+      min != null ? min() : this.min,
+      max != null ? max() : this.max,
     );
   }
 }
