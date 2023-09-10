@@ -17,7 +17,6 @@ class Person {
   final String surname;
 
   @ValueFilter()
-
   final int age;
 
   @ValueFilter()
