@@ -27,7 +27,7 @@ class FilterableAdapter<R> {
   });
 
   FilterableTypeAdapter<R, StringFilter> stringFilterAdapter;
-  FilterableTypeAdapter<R, DateRangeFilter> dateRangeFilterAdapter;
+  FilterableTypeAdapter<R, DateTimeRangeFilter> dateRangeFilterAdapter;
   List<FilterableTypeAdapter<R, BaseTypeFilterable>>? customAdapters;
 
   /// TODO: Missing principal docs
@@ -59,7 +59,7 @@ class FilterableAdapter<R> {
             );
           }
 
-        case DateRangeFilter:
+        case DateTimeRangeFilter:
           // query = _getDateRangeFilteredCollection(
           //   query,
           //   filter.jsonKey,
@@ -69,7 +69,7 @@ class FilterableAdapter<R> {
           query = dateRangeFilterAdapter.getFilteredData(
             query,
             filter.fieldId,
-            filter.typeFilterable as DateRangeFilter,
+            filter.typeFilterable as DateTimeRangeFilter,
             descending: descending,
           );
         default:

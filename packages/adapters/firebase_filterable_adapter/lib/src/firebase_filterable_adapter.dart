@@ -35,12 +35,12 @@ class FirebaseStringFilterAdapter
 
 /// TODO: Missing Docs
 class FirebaseDateRangeFilterAdapter
-    extends FirebaseFilterTypeAdapter<DateRangeFilter> {
+    extends FirebaseFilterTypeAdapter<DateTimeRangeFilter> {
   @override
   Query<Map<String, dynamic>> getFilteredData(
     Query<Map<String, dynamic>> data,
     String fieldId,
-    DateRangeFilter filter, {
+    DateTimeRangeFilter filter, {
     required bool descending,
   }) {
     return _getDateRangeFilteredCollection(
@@ -92,7 +92,7 @@ Query<Map<String, dynamic>> _getStringFilteredCollection(
 Query<Map<String, dynamic>> _getDateRangeFilteredCollection(
   Query<Map<String, dynamic>> collection,
   String field,
-  DateRangeFilter dateRangeFilter, {
+  DateTimeRangeFilter dateRangeFilter, {
   required bool descending,
 }) {
   var query = collection;
