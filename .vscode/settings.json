@@ -4,5 +4,7 @@
     "filterable_annotation",
     "filterable_generator",
     "examples",
+    "adapters",
+    "adapters/firebase",
   ]
 }
