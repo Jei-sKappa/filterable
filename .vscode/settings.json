@@ -1,0 +1,8 @@
+{
+  "conventionalCommits.scopes": [
+    "filterable",
+    "filterable_annotation",
+    "filterable_generator",
+    "examples",
+  ]
+}
