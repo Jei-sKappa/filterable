@@ -1,0 +1,25 @@
+targets:
+  $default:
+    builders:
+      filterable_generator:
+        enabled: true
+      #   generate_for:
+      #     exclude:
+      #       - test
+      #       - example
+      #     include:
+      #       - test/integration/*
+      #       - test/integration/**/*
+      # source_gen|combining_builder:
+      #   options:
+      #     ignore_for_file:
+      #       - "type=lint"
+
+builders:
+  filterable_generator:
+    import: "package:filterable_generator/builder.dart"
+    builder_factories: ["filterableBuilder"]
+    build_extensions: { ".dart": [".filterable.dart"] }
+    auto_apply: dependents
+    build_to: source
+    # runs_before: ["json_serializable|json_serializable"]
