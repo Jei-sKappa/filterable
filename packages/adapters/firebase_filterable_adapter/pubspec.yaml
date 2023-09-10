@@ -10,7 +10,7 @@ environment:
 dependencies:
   cloud_firestore: ^4.9.1
   filterable:
-    path: ../filterable
+    path: ../../filterable
   flutter:
     sdk: flutter
   
