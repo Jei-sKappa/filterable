@@ -146,6 +146,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     // Class Start
     final generatedClassName = '${classData.name}Filterable';
+    final generatedEnumName = '${classData.name}Field';
     buffer.writeln('/// Filter of ${element.name}');
     buffer.writeln('class $generatedClassName extends Filterable {');
 
@@ -279,7 +280,11 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       buffer.writeln('FilterableField(');
 
       // FieldId
-      buffer.writeln("fieldId: '${filter.fieldKey}',");
+      if (generateFields) {
+        buffer.writeln('fieldId: $generatedEnumName.${filter.fieldName}.id,');
+      } else {
+        buffer.writeln("fieldId: '${filter.fieldKey}',");
+      }
 
       // TypeFilterable
       buffer.writeln('typeFilterable: ${filter.filterName},');
@@ -393,8 +398,6 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     //! Should Generate Fields
 
     buffer.writeln();
-
-    final generatedEnumName = '${classData.name}Field';
 
     // enum Start
     buffer.writeln('/// Fields of ${classData.name}');
