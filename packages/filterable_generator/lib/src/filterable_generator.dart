@@ -62,13 +62,13 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
 
         filters.add(
           _RangeFilterData(
-            filterMode: rangeFilter,
+            filterType: rangeFilter,
             fieldType: fieldData.type!,
             fieldName: fieldData.name!,
             minFilterParameter: 'min$fieldNameWithFirstLetterUpperCase',
             maxFilterParameter: 'max$fieldNameWithFirstLetterUpperCase',
-            name: '${fieldData.name!}RangeFilter',
-            type: '${fieldTypeWithFirstLetterUpperCase}RangeFilter',
+            filterName: '${fieldData.name!}RangeFilter',
+            filterDartType: '${fieldTypeWithFirstLetterUpperCase}RangeFilter',
           ),
         );
         hasAddedFilter = true;
@@ -79,12 +79,12 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
       if (!hasAddedFilter || valueFilter != null) {
         filters.add(
           _ValueFilterData(
-            filterMode: valueFilter ?? const ValueFilter(),
+            filterType: valueFilter ?? const ValueFilter(),
             fieldType: fieldData.type!,
             fieldName: fieldData.name!,
             filterParameter: fieldData.name!,
-            name: '${fieldData.name!}Filter',
-            type: '${fieldTypeWithFirstLetterUpperCase}Filter',
+            filterName: '${fieldData.name!}Filter',
+            filterDartType: '${fieldTypeWithFirstLetterUpperCase}Filter',
           ),
         );
         hasAddedFilter = true;
@@ -120,7 +120,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
       final filter = filters[i];
 
       // Type Filter Start
-      buffer.writeln('${filter.name} = ${filter.type}');
+      buffer.writeln('${filter.filterName} = ${filter.filterDartType}');
       buffer.writeln('(');
       for (final parameter in filter.getFilterParameters()) {
         buffer.writeln('$parameter,');
@@ -139,7 +139,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
 
     // Filters Declaration
     for (final filter in filters) {
-      buffer.writeln('final ${filter.type} ${filter.name};');
+      buffer.writeln('final ${filter.filterDartType} ${filter.filterName};');
       buffer.writeln();
     }
 
@@ -156,7 +156,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
       buffer.writeln("fieldId: '${filter.fieldName}',");
 
       // TypeFilterable
-      buffer.writeln('typeFilterable: ${filter.name},');
+      buffer.writeln('typeFilterable: ${filter.filterName},');
 
       // FilterableField End
       buffer.writeln('),');
@@ -174,29 +174,29 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
 
 sealed class _FilterData {
   _FilterData({
-    required this.filterMode,
+    required this.filterType,
     required this.fieldType,
     required this.fieldName,
-    required this.name,
-    required this.type,
+    required this.filterName,
+    required this.filterDartType,
   });
 
-  final FilterType filterMode;
+  final FilterType filterType;
   final String fieldType;
   final String fieldName;
-  final String name;
-  final String type;
+  final String filterName;
+  final String filterDartType;
 
   List<String> getFilterParameters();
 }
 
 class _ValueFilterData extends _FilterData {
   _ValueFilterData({
-    required super.filterMode,
+    required super.filterType,
     required super.fieldType,
     required super.fieldName,
-    required super.name,
-    required super.type,
+    required super.filterName,
+    required super.filterDartType,
     required this.filterParameter,
   });
 
@@ -208,11 +208,11 @@ class _ValueFilterData extends _FilterData {
 
 class _RangeFilterData extends _FilterData {
   _RangeFilterData({
-    required super.filterMode,
+    required super.filterType,
     required super.fieldType,
     required super.fieldName,
-    required super.name,
-    required super.type,
+    required super.filterName,
+    required super.filterDartType,
     required this.minFilterParameter,
     required this.maxFilterParameter,
   });
