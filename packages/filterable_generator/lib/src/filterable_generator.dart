@@ -52,8 +52,16 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
 
       var hasAddedFilter = false;
 
-      final fieldTypeWithFirstLetterUpperCase = fieldData.type!
+      var fixedFieldType = fieldData.type!;
+
+      // Make field's type with first letter in upper case
+      // int -> Int (=> intFilter -> IntFilter)
+      fixedFieldType = fieldData.type!
           .replaceFirst(fieldData.type![0], fieldData.type![0].toUpperCase());
+
+      // Remove Nullability from Type
+      // String? -> String (=> String?Filter -> StringFilter)
+      fixedFieldType = fixedFieldType.replaceFirst('?', '');
 
       if (rangeFilter != null) {
         // Create a var with fieldData.name! with the first letter in upper case
@@ -62,13 +70,14 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
 
         filters.add(
           _RangeFilterData(
-            filterType: rangeFilter,
+            rangeFilter: rangeFilter,
             fieldType: fieldData.type!,
             fieldName: fieldData.name!,
+            fieldKey: fieldData.fieldKey,
             minFilterParameter: 'min$fieldNameWithFirstLetterUpperCase',
             maxFilterParameter: 'max$fieldNameWithFirstLetterUpperCase',
             filterName: '${fieldData.name!}RangeFilter',
-            filterDartType: '${fieldTypeWithFirstLetterUpperCase}RangeFilter',
+            filterDartType: '${fixedFieldType}RangeFilter',
           ),
         );
         hasAddedFilter = true;
@@ -79,12 +88,13 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
       if (!hasAddedFilter || valueFilter != null) {
         filters.add(
           _ValueFilterData(
-            filterType: valueFilter ?? const ValueFilter(),
+            valueFilter: valueFilter ?? const ValueFilter(),
             fieldType: fieldData.type!,
             fieldName: fieldData.name!,
+            fieldKey: fieldData.fieldKey,
             filterParameter: fieldData.name!,
             filterName: '${fieldData.name!}Filter',
-            filterDartType: '${fieldTypeWithFirstLetterUpperCase}Filter',
+            filterDartType: '${fixedFieldType}Filter',
           ),
         );
         hasAddedFilter = true;
@@ -153,7 +163,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
       buffer.writeln('FilterableField(');
 
       // FieldId
-      buffer.writeln("fieldId: '${filter.fieldName}',");
+      buffer.writeln("fieldId: '${filter.fieldKey}',");
 
       // TypeFilterable
       buffer.writeln('typeFilterable: ${filter.filterName},');
@@ -177,13 +187,17 @@ sealed class _FilterData {
     required this.filterType,
     required this.fieldType,
     required this.fieldName,
+    required FieldKey? fieldKey,
     required this.filterName,
     required this.filterDartType,
-  });
+  }) :
+        // If no [fieldKey] is provided, defaults to [fieldName]
+        fieldKey = fieldKey?.key ?? fieldName;
 
   final FilterType filterType;
   final String fieldType;
   final String fieldName;
+  final String fieldKey;
   final String filterName;
   final String filterDartType;
 
@@ -192,13 +206,16 @@ sealed class _FilterData {
 
 class _ValueFilterData extends _FilterData {
   _ValueFilterData({
-    required super.filterType,
+    required ValueFilter valueFilter,
     required super.fieldType,
     required super.fieldName,
+    required super.fieldKey,
     required super.filterName,
     required super.filterDartType,
     required this.filterParameter,
-  });
+  }) : super(
+          filterType: valueFilter,
+        );
 
   final String filterParameter;
 
@@ -208,14 +225,17 @@ class _ValueFilterData extends _FilterData {
 
 class _RangeFilterData extends _FilterData {
   _RangeFilterData({
-    required super.filterType,
+    required RangeFilter rangeFilter,
     required super.fieldType,
     required super.fieldName,
+    required super.fieldKey,
     required super.filterName,
     required super.filterDartType,
     required this.minFilterParameter,
     required this.maxFilterParameter,
-  });
+  }) : super(
+          filterType: rangeFilter,
+        );
 
   final String minFilterParameter;
   final String maxFilterParameter;

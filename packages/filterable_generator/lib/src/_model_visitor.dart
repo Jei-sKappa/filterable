@@ -1,4 +1,5 @@
-// ignore_for_file: depend_on_referenced_packages, cascade_invocations
+// ignore_for_file: depend_on_referenced_packages
+// ignore_for_file: public_member_api_docs
 
 import 'package:analyzer/dart/constant/value.dart';
 import 'package:analyzer/dart/element/element.dart';
@@ -8,7 +9,7 @@ import 'package:source_gen/source_gen.dart';
 
 const _rangeFilterAnnotation = TypeChecker.fromRuntime(RangeFilter);
 const _valueFilterAnnotation = TypeChecker.fromRuntime(ValueFilter);
-// const _filterTypeAnnotation = TypeChecker.fromRuntime(FilterType);
+const _fieldKeyAnnotation = TypeChecker.fromRuntime(FieldKey);
 
 class ModelVisitor extends SimpleElementVisitor<void> {
   ClassData classData = ClassData();
@@ -22,7 +23,7 @@ class ModelVisitor extends SimpleElementVisitor<void> {
   @override
   void visitFieldElement(FieldElement element) {
     final fieldData = FieldData.fromElement(element);
-    classData.fields??= <FieldData>[];
+    classData.fields ??= <FieldData>[];
     classData.fields!.add(fieldData);
   }
 }
@@ -43,7 +44,7 @@ class FieldData {
     required this.type,
     required this.rangeFilters,
     required this.valueFilters,
-    // required this.filterTypes,
+    required this.fieldKey,
   });
 
   factory FieldData.fromElement(FieldElement element) {
@@ -54,23 +55,6 @@ class FieldData {
     ValueFilter getValueFilter(DartObject annotation) {
       return const ValueFilter();
     }
-
-    // FilterType getFilterType(DartObject annotation) {
-    //   final modes = <FilterMode>{};
-    //   final modesList = annotation.getField('modes')?.toListValue();
-    //   modesList?.forEach((mode) {
-    //     if (mode.type is ValueFilter) {
-    //       final valueFilter = getValueFilter(mode);
-    //       modes.add(valueFilter);
-    //     }
-    //     if (mode.type is RangeFilter) {
-    //       final rangeFilter = getRangeFilter(mode);
-    //       modes.add(rangeFilter);
-    //     }
-    //   });
-
-    //   return FilterType(modes: modes);
-    // }
 
     // Field name
     final fieldName = element.name;
@@ -91,19 +75,21 @@ class FieldData {
       final valueFilter = getValueFilter(annotation);
       valueAnnotations.add(valueFilter);
     });
-    // // FilterType
-    // final filterTypeAnnotations = <FilterType>[];
-    // _filterTypeAnnotation.annotationsOfExact(element).forEach((annotation) {
-    //   final filterType = getFilterType(annotation);
-    //   filterTypeAnnotations.add(filterType);
-    // });
+
+    // FieldKey
+    FieldKey? fieldKey;
+    _fieldKeyAnnotation.annotationsOfExact(element).forEach((annotation) {
+      final key = annotation.getField('key')!.toStringValue()!;
+      fieldKey = FieldKey(key);
+    });
+
 
     return FieldData(
       name: fieldName,
       type: fieldType,
       rangeFilters: rangeAnnotations,
       valueFilters: valueAnnotations,
-      // filterTypes: filterTypeAnnotations,
+      fieldKey: fieldKey,
     );
   }
 
@@ -111,5 +97,5 @@ class FieldData {
   String? type;
   List<RangeFilter> rangeFilters;
   List<ValueFilter> valueFilters;
-  // List<FilterType> filterTypes;
+  FieldKey? fieldKey;
 }
