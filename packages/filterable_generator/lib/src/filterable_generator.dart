@@ -52,16 +52,22 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
 
       var hasAddedFilter = false;
 
-      var fixedFieldType = fieldData.type!;
+      // Remove Nullability from Type
+      // String? -> String (=> String?Filter -> StringFilter)
+      final fieldTypeWithoutNullability = fieldData.type!.replaceFirst('?', '');
+      late bool isNullable;
+      if (fieldTypeWithoutNullability != fieldData.type!) {
+        isNullable = true;
+      } else {
+        isNullable = false;
+      }
 
       // Make field's type with first letter in upper case
       // int -> Int (=> intFilter -> IntFilter)
-      fixedFieldType = fieldData.type!
-          .replaceFirst(fieldData.type![0], fieldData.type![0].toUpperCase());
-
-      // Remove Nullability from Type
-      // String? -> String (=> String?Filter -> StringFilter)
-      fixedFieldType = fixedFieldType.replaceFirst('?', '');
+      final baseFilterDartType = fieldTypeWithoutNullability.replaceFirst(
+        fieldData.type![0],
+        fieldData.type![0].toUpperCase(),
+      );
 
       if (rangeFilter != null) {
         // Create a var with fieldData.name! with the first letter in upper case
@@ -78,16 +84,20 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
             // they should be nullable
             minFilterParameter: _FilterParameter(
               // Add Nullability to Type
-              type: '${fieldData.type!}?',
+              baseType: fieldTypeWithoutNullability,
+              isNullable: true,
               name: 'min$fieldNameWithFirstLetterUpperCase',
+              fieldName: 'min',
             ),
             maxFilterParameter: _FilterParameter(
               // Add Nullability to Type
-              type: '${fieldData.type!}?',
+              baseType: fieldTypeWithoutNullability,
+              isNullable: true,
               name: 'max$fieldNameWithFirstLetterUpperCase',
+              fieldName: 'max',
             ),
             filterName: '${fieldData.name!}RangeFilter',
-            filterDartType: '${fixedFieldType}RangeFilter',
+            filterDartType: '${baseFilterDartType}RangeFilter',
           ),
         );
         hasAddedFilter = true;
@@ -103,11 +113,13 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
             fieldName: fieldData.name!,
             fieldKey: fieldData.fieldKey,
             filterParameter: _FilterParameter(
-              type: fieldData.type!,
+              baseType: fieldTypeWithoutNullability,
+              isNullable: isNullable,
               name: fieldData.name!,
+              fieldName: 'value',
             ),
             filterName: '${fieldData.name!}Filter',
-            filterDartType: '${fixedFieldType}Filter',
+            filterDartType: '${baseFilterDartType}Filter',
           ),
         );
         hasAddedFilter = true;
@@ -127,11 +139,10 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
 
     // Constructor Parameters Fields
     for (final filter in filters) {
-      const prefixLine = 'required';
-      const suffixLine = ',';
       for (final parameter in filter.getFilterParameters()) {
-        // ignore: lines_longer_than_80_chars
-        buffer.writeln('$prefixLine ${parameter.type} ${parameter.name} $suffixLine');
+        buffer.writeln(
+          'required ${parameter.fullType} ${parameter.name},',
+        );
       }
     }
 
@@ -189,6 +200,58 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
     // Override get filters End
     buffer.writeln('];');
 
+    buffer.writeln();
+
+    // CopyWith Parameters Start
+    buffer.writeln('$generatedClassName copyWith({');
+
+    //
+    for (final filter in filters) {
+      for (final parameter in filter.getFilterParameters()) {
+        // If the parameter is nullable, it should be wrapped in a Function
+        // to be able to use the null-aware operator
+        final maybeFunction = parameter.isNullable ? 'Function()?' : '';
+        buffer.writeln(
+          '${parameter.baseType}? $maybeFunction ${parameter.name},',
+        );
+      }
+    }
+
+    // CopyWith Parameters End
+    buffer.writeln('})');
+
+    // CopyWith Body Start
+    buffer.writeln('=> $generatedClassName(');
+
+    //
+    for (final filter in filters) {
+      for (final parameter in filter.getFilterParameters()) {
+        // If the parameter is nullable, it should be wrapped in a Function
+        // to be able to use the null-aware operator
+        if (parameter.isNullable) {
+          buffer.writeln('${parameter.name}: ${parameter.name}');
+          buffer.writeln(' != null ');
+          buffer.writeln(' ? ');
+          buffer.writeln('${parameter.name}()');
+          buffer.writeln(' : ');
+          buffer.writeln('${filter.filterName}.${parameter.fieldName},');
+        } else {
+          // ignore: lines_longer_than_80_chars
+          final fallBackString = '(${filter.filterName}.${parameter.fieldName})!';
+          buffer.writeln('/// It is used $fallBackString because');
+          buffer.writeln('/// [${filter.filterName}.${parameter.fieldName}] corresponds to [${parameter.name}] ');
+          buffer.writeln('/// which is managed exclusively by [$generatedClassName]');
+          buffer.writeln('/// and, as requested by the constructor, it cannot be null');
+          buffer.writeln('${parameter.name}: ${parameter.name}');
+          buffer.writeln(' ?? ');
+          buffer.writeln('$fallBackString,');
+        }
+      }
+    }
+
+    // CopyWith Body End
+    buffer.writeln(');');
+
     // Class End
     buffer.writeln('}');
 
@@ -221,11 +284,26 @@ sealed class _FilterData {
 class _FilterParameter {
   _FilterParameter({
     required this.name,
-    required this.type,
+    required this.baseType,
+    required this.isNullable,
+    required this.fieldName,
   });
 
+  /// The name of the parameter
   final String name;
-  final String type;
+
+  /// The type without Nullability
+  final String baseType;
+
+  /// Whether the type is nullable or not
+  final bool isNullable;
+
+  /// The nameOf the field inside the filters
+  /// For example for RangeFilter it would be:
+  /// 'min' or 'max'
+  final String fieldName;
+
+  String get fullType => isNullable ? '$baseType?' : baseType;
 }
 
 class _ValueFilterData extends _FilterData {
