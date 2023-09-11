@@ -2,9 +2,21 @@ import 'package:meta/meta_meta.dart';
 
 /// Annotation class to mark a class as filterable
 @Target({TargetKind.classType})
-class FilterableAnnotation {
+class FilterableGen {
   /// Default constructor
-  const FilterableAnnotation();
+  const FilterableGen({
+    this.generateFields = false,
+    this.generateGetValueFromFieldsExtension = false,
+  });
+
+  /// Whether to generate the fields or not
+  final bool generateFields;
+
+  /// Whether to generate the extension or not
+  /// 
+  /// If you want to generate the extension
+  /// `generateFields` must be `true
+  final bool generateGetValueFromFieldsExtension;
 }
 
 /// Annotation to mark a class as filterable
@@ -105,4 +117,4 @@ class FilterableAnnotation {
 ///       ];
 /// }
 /// ```
-const filterable = FilterableAnnotation();
+const filterable = FilterableGen();
