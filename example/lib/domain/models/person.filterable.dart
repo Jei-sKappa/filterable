@@ -98,39 +98,39 @@ class PersonFilterable extends Filterable {
   @override
   List<FilterableField> get filters => [
         FilterableField(
-          fieldId: 'name',
+          fieldId: PersonField.name.id,
           typeFilterable: nameFilter,
         ),
         FilterableField(
-          fieldId: 'surname_of_person',
+          fieldId: PersonField.surname.id,
           typeFilterable: surnameFilter,
         ),
         FilterableField(
-          fieldId: 'age',
+          fieldId: PersonField.age.id,
           typeFilterable: ageFilter,
         ),
         FilterableField(
-          fieldId: 'dateOfBirth',
+          fieldId: PersonField.dateOfBirth.id,
           typeFilterable: dateOfBirthRangeFilter,
         ),
         FilterableField(
-          fieldId: 'dateOfBirth',
+          fieldId: PersonField.dateOfBirth.id,
           typeFilterable: dateOfBirthFilter,
         ),
         FilterableField(
-          fieldId: 'favoriteColor',
+          fieldId: PersonField.favoriteColor.id,
           typeFilterable: favoriteColorFilter,
         ),
         FilterableField(
-          fieldId: 'description',
+          fieldId: PersonField.description.id,
           typeFilterable: descriptionFilter,
         ),
         FilterableField(
-          fieldId: 'ranking',
+          fieldId: PersonField.ranking.id,
           typeFilterable: rankingRangeFilter,
         ),
         FilterableField(
-          fieldId: 'nickname',
+          fieldId: PersonField.nickname.id,
           typeFilterable: nicknameFilter,
         ),
       ];
