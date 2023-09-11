@@ -50,7 +50,23 @@ class FilterableAdapter<R> {
           //   descending: descending,
           // );
           final stringFilter = filter.typeFilterable as StringFilter;
-          if (stringFilter.value.isNotEmpty) {
+
+          // CanFilter based on:
+          // 1. allowNull: true - "MyQuery" => canFilter: true
+          // 2. allowNull: true - "" => canFilter: false
+          // 3. allowNull: true - null => canFilter: true
+          // 4. allowNull: false - "MyQuery" => canFilter: true
+          // 5. allowNull: false - "" => canFilter: false
+          // 6. allowNull: false - null => canFilter: false
+          // Result:
+          // if value is empty cannot filter
+          // if value is not empty can filter
+          // if value is null and allowNull is true can filter
+          // if value is null and allowNull is false cannot filter
+          final canFilter = stringFilter.allowNull
+              ? (stringFilter.value?.isNotEmpty ?? true)
+              : (stringFilter.value?.isNotEmpty ?? false);
+          if (canFilter) {
             query = stringFilterAdapter.getFilteredData(
               query,
               filter.fieldId,
@@ -92,7 +108,9 @@ class FilterableAdapter<R> {
           }
 
           if (finded == false) {
-            print("Not founded adapter for ${filter.typeFilterable.runtimeType}");
+            print(
+              'Not founded adapter for ${filter.typeFilterable.runtimeType}',
+            );
             // TODO: Throw specific error
             throw UnimplementedError();
           }

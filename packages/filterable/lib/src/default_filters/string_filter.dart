@@ -14,10 +14,11 @@ enum StringFilterMode {
 
 /// A [StringFilter].
 /// This allows to filter strings
-class StringFilter extends TypeFilterable<String> {
+class StringFilter extends TypeFilterable<String?> {
   /// Creates a StringFilter
   StringFilter(
     this.value, {
+    this.allowNull = false,
     StringFilterMode? mode,
     bool? matchWithLowercase,
     bool? enableTrim,
@@ -27,7 +28,10 @@ class StringFilter extends TypeFilterable<String> {
 
   /// The query to filter the string
   @override
-  String value;
+  String? value;
+
+  @override
+  bool allowNull;
 
   /// The mode to filter the string
   StringFilterMode mode;
@@ -41,12 +45,14 @@ class StringFilter extends TypeFilterable<String> {
   /// Creates a copy of this StringFilter with the given fields replaced
   StringFilter copyWith({
     String? value,
+    bool? allowNull,
     StringFilterMode? mode,
     bool? matchWithLowercase,
     bool? enableTrim,
   }) =>
       StringFilter(
         value ?? this.value,
+        allowNull: allowNull ?? this.allowNull,
         mode: mode ?? this.mode,
         matchWithLowercase: matchWithLowercase ?? this.matchWithLowercase,
         enableTrim: enableTrim ?? this.enableTrim,

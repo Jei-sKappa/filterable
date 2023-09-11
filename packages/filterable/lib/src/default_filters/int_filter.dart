@@ -4,12 +4,25 @@ import 'package:filterable/src/base_type_filterable.dart';
 /// This allows to filter strings
 class IntFilter extends TypeFilterable<int> {
   /// Creates a IntFilter
-  IntFilter(this.value);
+  IntFilter(
+    this.value, {
+    this.allowNull = false,
+  });
 
   /// The query to filter the string
   @override
   int value;
 
+  @override
+  bool allowNull;
+
   /// Creates a copy of this IntFilter with the given fields replaced
-  IntFilter copyWith(int? value) => IntFilter(value ?? this.value);
+  IntFilter copyWith({
+    int? value,
+    bool? allowNull,
+  }) =>
+      IntFilter(
+        value ?? this.value,
+        allowNull: allowNull ?? this.allowNull,
+      );
 }

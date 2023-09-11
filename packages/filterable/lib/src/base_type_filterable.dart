@@ -6,6 +6,9 @@ sealed class BaseTypeFilterable {
 
 /// Base class for all filters.
 abstract class TypeFilterable<T> extends BaseTypeFilterable {
+  /// If true, the filter can be null
+  abstract bool allowNull;
+
   /// Value of the filter
   abstract T value;
 }
