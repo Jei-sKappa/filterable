@@ -181,7 +181,7 @@ sealed class _FilterData {
     required this.type,
   });
 
-  final FilterMode filterMode;
+  final FilterType filterMode;
   final String fieldType;
   final String fieldName;
   final String name;

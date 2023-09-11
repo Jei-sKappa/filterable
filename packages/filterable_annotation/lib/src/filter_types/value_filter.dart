@@ -1,9 +1,9 @@
-part of 'filter_mode.dart';
+part of 'filter_type.dart';
 
 /// An annotation to speicify that a field is filterable
 /// by value.
 @Target({TargetKind.field})
-class ValueFilter implements FilterMode {
+class ValueFilter implements FilterType {
   /// Creates a new [ValueFilter] instance.
   ///
   /// Only required when the default behavior is not desired.
