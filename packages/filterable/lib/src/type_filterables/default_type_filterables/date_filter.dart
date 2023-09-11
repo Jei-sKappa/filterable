@@ -1,8 +1,8 @@
-import 'package:filterable/src/base_type_filterable.dart';
+import 'package:filterable/src/type_filterables/type_filterable.dart';
 
 /// A [DateTimeFilter].
 /// This allows to filter strings
-class DateTimeFilter extends TypeFilterable<DateTime> {
+class DateTimeFilter extends TypeFilterable<DateTime?> {
   /// Creates a DateTimeFilter
   DateTimeFilter(
     this.value, {
@@ -11,7 +11,7 @@ class DateTimeFilter extends TypeFilterable<DateTime> {
 
   /// The query to filter the string
   @override
-  DateTime value;
+  DateTime? value;
 
   @override
   bool allowNull;

@@ -1,8 +1,8 @@
-import 'package:filterable/src/base_type_filterable.dart';
+import 'package:filterable/src/type_filterables/type_filterable.dart';
 
 /// A [IntFilter].
 /// This allows to filter strings
-class IntFilter extends TypeFilterable<int> {
+class IntFilter extends TypeFilterable<int?> {
   /// Creates a IntFilter
   IntFilter(
     this.value, {
@@ -11,7 +11,7 @@ class IntFilter extends TypeFilterable<int> {
 
   /// The query to filter the string
   @override
-  int value;
+  int? value;
 
   @override
   bool allowNull;

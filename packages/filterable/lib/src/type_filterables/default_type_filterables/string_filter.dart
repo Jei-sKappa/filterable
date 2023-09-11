@@ -1,4 +1,4 @@
-import 'package:filterable/src/base_type_filterable.dart';
+import 'package:filterable/src/type_filterables/type_filterable.dart';
 
 /// String filter mode
 enum StringFilterMode {

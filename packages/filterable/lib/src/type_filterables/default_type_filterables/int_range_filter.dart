@@ -1,4 +1,4 @@
-import 'package:filterable/src/base_type_filterable.dart';
+import 'package:filterable/src/type_filterables/type_filterable.dart';
 
 /// A [IntRangeFilter]
 /// that allows to filter projects by date
