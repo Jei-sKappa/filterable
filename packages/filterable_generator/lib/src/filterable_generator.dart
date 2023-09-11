@@ -74,8 +74,18 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
             fieldType: fieldData.type!,
             fieldName: fieldData.name!,
             fieldKey: fieldData.fieldKey,
-            minFilterParameter: 'min$fieldNameWithFirstLetterUpperCase',
-            maxFilterParameter: 'max$fieldNameWithFirstLetterUpperCase',
+            // RangeFilter has 2 parameters: min and max
+            // they should be nullable
+            minFilterParameter: _FilterParameter(
+              // Add Nullability to Type
+              type: '${fieldData.type!}?',
+              name: 'min$fieldNameWithFirstLetterUpperCase',
+            ),
+            maxFilterParameter: _FilterParameter(
+              // Add Nullability to Type
+              type: '${fieldData.type!}?',
+              name: 'max$fieldNameWithFirstLetterUpperCase',
+            ),
             filterName: '${fieldData.name!}RangeFilter',
             filterDartType: '${fixedFieldType}RangeFilter',
           ),
@@ -92,7 +102,10 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
             fieldType: fieldData.type!,
             fieldName: fieldData.name!,
             fieldKey: fieldData.fieldKey,
-            filterParameter: fieldData.name!,
+            filterParameter: _FilterParameter(
+              type: fieldData.type!,
+              name: fieldData.name!,
+            ),
             filterName: '${fieldData.name!}Filter',
             filterDartType: '${fixedFieldType}Filter',
           ),
@@ -114,10 +127,11 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
 
     // Constructor Parameters Fields
     for (final filter in filters) {
-      final prefixLine = 'required ${filter.fieldType}';
+      const prefixLine = 'required';
       const suffixLine = ',';
-      for (final fieldName in filter.getFilterParameters()) {
-        buffer.writeln('$prefixLine $fieldName $suffixLine');
+      for (final parameter in filter.getFilterParameters()) {
+        // ignore: lines_longer_than_80_chars
+        buffer.writeln('$prefixLine ${parameter.type} ${parameter.name} $suffixLine');
       }
     }
 
@@ -133,7 +147,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
       buffer.writeln('${filter.filterName} = ${filter.filterDartType}');
       buffer.writeln('(');
       for (final parameter in filter.getFilterParameters()) {
-        buffer.writeln('$parameter,');
+        buffer.writeln('${parameter.name},');
       }
       buffer.writeln(')');
 
@@ -201,7 +215,17 @@ sealed class _FilterData {
   final String filterName;
   final String filterDartType;
 
-  List<String> getFilterParameters();
+  List<_FilterParameter> getFilterParameters();
+}
+
+class _FilterParameter {
+  _FilterParameter({
+    required this.name,
+    required this.type,
+  });
+
+  final String name;
+  final String type;
 }
 
 class _ValueFilterData extends _FilterData {
@@ -217,10 +241,10 @@ class _ValueFilterData extends _FilterData {
           filterType: valueFilter,
         );
 
-  final String filterParameter;
+  final _FilterParameter filterParameter;
 
   @override
-  List<String> getFilterParameters() => [filterParameter];
+  List<_FilterParameter> getFilterParameters() => [filterParameter];
 }
 
 class _RangeFilterData extends _FilterData {
@@ -237,11 +261,11 @@ class _RangeFilterData extends _FilterData {
           filterType: rangeFilter,
         );
 
-  final String minFilterParameter;
-  final String maxFilterParameter;
+  final _FilterParameter minFilterParameter;
+  final _FilterParameter maxFilterParameter;
 
   @override
-  List<String> getFilterParameters() => [
+  List<_FilterParameter> getFilterParameters() => [
         minFilterParameter,
         maxFilterParameter,
       ];
