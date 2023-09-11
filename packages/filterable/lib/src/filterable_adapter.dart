@@ -43,12 +43,6 @@ class FilterableAdapter<R> {
     for (final filter in filterable.filters) {
       switch (filter.typeFilterable.runtimeType) {
         case StringFilter:
-          // query = _getStringFilteredCollection(
-          //   query,
-          //   filter.jsonKey,
-          //   filter as StringFilter,
-          //   descending: descending,
-          // );
           final stringFilter = filter.typeFilterable as StringFilter;
 
           // CanFilter based on:
@@ -76,12 +70,6 @@ class FilterableAdapter<R> {
           }
 
         case DateTimeRangeFilter:
-          // query = _getDateRangeFilteredCollection(
-          //   query,
-          //   filter.jsonKey,
-          //   filter as DateRangeFilter,
-          //   descending: descending,
-          // );
           query = dateRangeFilterAdapter.getFilteredData(
             query,
             filter.fieldId,
@@ -116,47 +104,6 @@ class FilterableAdapter<R> {
           }
       }
     }
-
-    // // Name Filter
-    // if (filter.nameFilter.value.isNotEmpty) {
-    //   query = _getStringFilteredCollection(
-    //     query,
-    //     ProjectField.name.jsonKey,
-    //     filter.nameFilter,
-    //     descending: descending,
-    //   );
-    // }
-
-    // // Client Filter
-    // if (filter.clientNameFilter.value.isNotEmpty) {
-    //   query = _getStringFilteredCollection(
-    //     query,
-    //     ProjectField.clientName.jsonKey,
-    //     filter.clientNameFilter,
-    //     descending: descending,
-    //   );
-    // }
-
-    // // Creation Date Filter
-    // query = _getDateRangeFilteredCollection(
-    //   query,
-    //   ProjectField.creationTime.jsonKey,
-    //   filter.creationDateRange,
-    //   descending: descending,
-    // );
-
-    // // Project Status Filter
-    // switch (filter.statusFilter.value) {
-    //   case null:
-    //     // Showing all: no filter
-    //     break;
-    //   // ignore: no_default_cases
-    //   default:
-    //     query = _getStatusFilteredCollection(
-    //       query,
-    //       filter.statusFilter.value!,
-    //     );
-    // }
 
     return query;
   }
