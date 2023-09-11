@@ -9,13 +9,25 @@ import 'package:filterable_generator/src/_model_visitor.dart';
 import 'package:source_gen/source_gen.dart';
 
 /// Generates a `*.filterable.dart` file for each annotated class.
-class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
+class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
   @override
   String generateForAnnotatedElement(
     Element element,
     ConstantReader annotation,
     BuildStep buildStep,
   ) {
+    final generateFields =
+        annotation.objectValue.getField('generateFields')!.toBoolValue()!;
+    final generateGetValueFromFieldsExtension = annotation.objectValue
+        .getField('generateGetValueFromFieldsExtension')!
+        .toBoolValue()!;
+
+    if (!generateFields && generateGetValueFromFieldsExtension) {
+      throw StateError(
+        'If you want to generate the extension, you must generate the fields',
+      );
+    }
+
     final visitor = ModelVisitor();
 
     // Fills ClassData in [visitor]
@@ -372,6 +384,102 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableAnnotation> {
 
     // Class End
     buffer.writeln('}');
+
+    // Fields Generator
+    if (!generateFields) {
+      return buffer.toString();
+    }
+
+    //! Should Generate Fields
+
+    buffer.writeln();
+
+    final generatedEnumName = '${classData.name}Field';
+
+    // enum Start
+    buffer.writeln('/// Fields of ${classData.name}');
+    buffer.writeln('enum $generatedEnumName {');
+
+    // enum fields
+    for (var i = 0; i < classFields.length; i++) {
+      final fieldData = classFields[i];
+      buffer.writeln('/// The ${fieldData.name} of [${classData.name}]');
+      buffer.writeln(
+        "${fieldData.name}('${fieldData.fieldKey?.key ?? fieldData.name}')",
+      );
+      // Line Terminator
+      if (i == classFields.length - 1) {
+        buffer.writeln(';');
+      } else {
+        buffer.writeln(',');
+      }
+
+      buffer.writeln();
+    }
+
+    // enum Constructor
+    buffer.writeln('const $generatedEnumName(this.id);');
+
+    // enum Custom Fields
+    // id
+    buffer.writeln('final String id;');
+
+    // enum End
+    buffer.writeln('}');
+
+    // Extension Generator
+    if (!generateGetValueFromFieldsExtension) {
+      return buffer.toString();
+    }
+
+    //! Should Generate Extension
+
+    // Extension Start
+    buffer.writeln('/// Extension on [${classData.name}] that adds:');
+    buffer.writeln('/// - [getValueFromField]');
+    buffer.writeln('/// - [getAllValuesFromFields]');
+    buffer.writeln('extension GetValueFromFields on ${classData.name} {');
+
+    // getValueFromField Start
+    buffer
+        .writeln('/// Returns the value of an instance of [${classData.name}]');
+    buffer.writeln('/// based on a [$generatedEnumName]');
+    buffer.writeln('dynamic getValueFromField($generatedEnumName field) {');
+
+    // getValueFromField body Start
+    buffer.writeln('switch (field) {');
+
+    //
+    for (final fieldData in classFields) {
+      buffer.writeln('case $generatedEnumName.${fieldData.name}:');
+      buffer.writeln('return ${fieldData.name};');
+    }
+
+    // getValueFromField body End
+    buffer.writeln('}');
+
+    // getValueFromField End
+    buffer.writeln('}');
+
+    // getAllValuesFromFields
+    buffer.writeln('/// Returns a list of values of an instance of');
+    buffer.writeln('/// [${classData.name}] based on a list of');
+    buffer.writeln('/// [$generatedEnumName]');
+    buffer.write('''
+List<dynamic> getAllValuesFromFields(List<$generatedEnumName> fields) {
+  final values = <dynamic>[];
+  for (final field in fields) {
+    values.add(getValueFromField(field));
+  }
+
+  return values;
+}
+''');
+
+    // Extension End
+    buffer.writeln('}');
+
+    buffer.writeln();
 
     return buffer.toString();
   }
