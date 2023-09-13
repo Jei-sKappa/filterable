@@ -7,6 +7,7 @@ class FilterableGen {
   const FilterableGen({
     this.generateFields = false,
     this.generateGetValueFromFieldsExtension = false,
+    this.customFilterSuffix = 'Filter',
   });
 
   /// Whether to generate the fields or not
@@ -17,6 +18,20 @@ class FilterableGen {
   /// If you want to generate the extension
   /// `generateFields` must be `true
   final bool generateGetValueFromFieldsExtension;
+
+
+  /// The suffix to use when defining the type
+  /// of a CustomFilter when `filter==null`
+  /// 
+  /// Defaults to: 'Filter'
+  /// 
+  /// Example:
+  /// ```dart
+  /// @CustomFilter()
+  /// // Will generate a filter of type: 'MyClass<customFilterSuffix>'
+  /// final MyClass myString;
+  /// ```
+  final String customFilterSuffix;
 }
 
 /// Annotation to mark a class as filterable

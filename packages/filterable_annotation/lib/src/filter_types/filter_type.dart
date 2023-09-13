@@ -1,5 +1,6 @@
 import 'package:meta/meta_meta.dart';
 
+part 'custom_filter.dart';
 part 'range_filter.dart';
 part 'value_filter.dart';
 
