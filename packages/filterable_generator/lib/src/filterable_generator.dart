@@ -21,6 +21,8 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     final generateGetValueFromFieldsExtension = annotation.objectValue
         .getField('generateGetValueFromFieldsExtension')!
         .toBoolValue()!;
+    final customFilterSuffix =
+        annotation.objectValue.getField('customFilterSuffix')!.toStringValue()!;
 
     if (!generateFields && generateGetValueFromFieldsExtension) {
       throw StateError(
@@ -59,6 +61,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     // Create a list of all filters
     final filters = <_FilterData>[];
     for (final fieldData in classFields) {
+      final customFilters = fieldData.customFilters;
       final rangeFilter = fieldData.rangeFilters.firstOrNull;
       final valueFilter = fieldData.valueFilters.firstOrNull;
 
@@ -80,6 +83,23 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
         fieldData.type![0],
         fieldData.type![0].toUpperCase(),
       );
+
+      if (customFilters.isNotEmpty) {
+        for (final customFilter in customFilters) {
+          filters.add(
+            _CustomFilterData(
+              customFilter: customFilter,
+              fieldType: fieldData.type!,
+              fieldName: fieldData.name!,
+              fieldKey: fieldData.fieldKey,
+              filterName: '${fieldData.name!}Filter',
+              filterDartType: customFilter.filter ??
+                  '$baseFilterDartType$customFilterSuffix',
+            ),
+          );
+        }
+        hasAddedFilter = true;
+      }
 
       if (rangeFilter != null) {
         // Create a var with fieldData.name! with the first letter in upper case
@@ -426,6 +446,22 @@ class _FilterParameter {
   final String fieldName;
 
   String get fullType => isNullable ? '$baseType?' : baseType;
+}
+
+class _CustomFilterData extends _FilterData {
+  _CustomFilterData({
+    required CustomFilter customFilter,
+    required super.fieldType,
+    required super.fieldName,
+    required super.fieldKey,
+    required super.filterName,
+    required super.filterDartType,
+  }) : super(
+          filterType: customFilter,
+        );
+
+  @override
+  List<_FilterParameter> getFilterParameters() => [];
 }
 
 class _ValueFilterData extends _FilterData {

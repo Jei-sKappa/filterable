@@ -9,6 +9,7 @@ import 'package:source_gen/source_gen.dart';
 
 const _rangeFilterAnnotation = TypeChecker.fromRuntime(RangeFilter);
 const _valueFilterAnnotation = TypeChecker.fromRuntime(ValueFilter);
+const _customFilterAnnotation = TypeChecker.fromRuntime(CustomFilter);
 const _fieldKeyAnnotation = TypeChecker.fromRuntime(FieldKey);
 
 class ModelVisitor extends SimpleElementVisitor<void> {
@@ -44,6 +45,7 @@ class FieldData {
     required this.type,
     required this.rangeFilters,
     required this.valueFilters,
+    required this.customFilters,
     required this.fieldKey,
   });
 
@@ -54,6 +56,13 @@ class FieldData {
 
     ValueFilter getValueFilter(DartObject annotation) {
       return const ValueFilter();
+    }
+
+    CustomFilter getCustomFilter(DartObject annotation) {
+      final filter = annotation.getField('filter')!.toStringValue();
+      return CustomFilter(
+        filter,
+      );
     }
 
     // Field name
@@ -76,6 +85,13 @@ class FieldData {
       valueAnnotations.add(valueFilter);
     });
 
+    // CustomFilter
+    final customAnnotations = <CustomFilter>[];
+    _customFilterAnnotation.annotationsOfExact(element).forEach((annotation) {
+      final customFilter = getCustomFilter(annotation);
+      customAnnotations.add(customFilter);
+    });
+
     // FieldKey
     FieldKey? fieldKey;
     _fieldKeyAnnotation.annotationsOfExact(element).forEach((annotation) {
@@ -88,6 +104,7 @@ class FieldData {
       type: fieldType,
       rangeFilters: rangeAnnotations,
       valueFilters: valueAnnotations,
+      customFilters: customAnnotations,
       fieldKey: fieldKey,
     );
   }
@@ -96,5 +113,6 @@ class FieldData {
   String? type;
   List<RangeFilter> rangeFilters;
   List<ValueFilter> valueFilters;
+  List<CustomFilter> customFilters;
   FieldKey? fieldKey;
 }
