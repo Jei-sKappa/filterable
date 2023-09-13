@@ -49,25 +49,11 @@ class FieldData {
 
   factory FieldData.fromElement(FieldElement element) {
     RangeFilter getRangeFilter(DartObject annotation) {
-      final defaultMin = annotation.getField('defaultMin')!.toStringValue();
-      final defaultMax = annotation.getField('defaultMax')!.toStringValue();
-      final includeDefaultsInConstructor =
-          annotation.getField('includeDefaultsInConstructor')!.toBoolValue()!;
-      return RangeFilter(
-        defaultMin: defaultMin,
-        defaultMax: defaultMax,
-        includeDefaultsInConstructor: includeDefaultsInConstructor,
-      );
+      return const RangeFilter();
     }
 
     ValueFilter getValueFilter(DartObject annotation) {
-      final defaultValue = annotation.getField('defaultValue')!.toStringValue();
-      final includeDefaultsInConstructor =
-          annotation.getField('includeDefaultsInConstructor')!.toBoolValue()!;
-      return ValueFilter(
-        defaultValue: defaultValue,
-        includeDefaultsInConstructor: includeDefaultsInConstructor,
-      );
+      return const ValueFilter();
     }
 
     // Field name

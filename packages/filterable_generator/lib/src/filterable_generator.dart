@@ -100,7 +100,6 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
               isNullable: true,
               name: 'min$fieldNameWithFirstLetterUpperCase',
               fieldName: 'min',
-              defaultValue: rangeFilter.defaultMin,
             ),
             maxFilterParameter: _FilterParameter(
               // Add Nullability to Type
@@ -108,7 +107,6 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
               isNullable: true,
               name: 'max$fieldNameWithFirstLetterUpperCase',
               fieldName: 'max',
-              defaultValue: rangeFilter.defaultMax,
             ),
             filterName: '${fieldData.name!}RangeFilter',
             filterDartType: '${baseFilterDartType}RangeFilter',
@@ -131,7 +129,6 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
               isNullable: isNullable,
               name: fieldData.name!,
               fieldName: 'value',
-              defaultValue: valueFilter?.defaultValue,
             ),
             filterName: '${fieldData.name!}Filter',
             filterDartType: '${baseFilterDartType}Filter',
@@ -156,27 +153,9 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     // Constructor Parameters Fields
     for (final filter in filters) {
       for (final parameter in filter.getFilterParameters()) {
-        // Include Defaults in Constructor
-        // Its true only if the filter has a default value
-        late bool includeDefaultsInConstructor;
-        switch (filter.filterType) {
-          case final ValueFilter valueFilter:
-            includeDefaultsInConstructor =
-                valueFilter.includeDefaultsInConstructor;
-          case final RangeFilter rangeFilter:
-            includeDefaultsInConstructor =
-                rangeFilter.includeDefaultsInConstructor;
-        }
-        if (includeDefaultsInConstructor && parameter.defaultValue != null) {
-          buffer.writeln(
-            // ignore: lines_longer_than_80_chars
-            '${parameter.fullType} ${parameter.name} = ${parameter.getDefaultNameForParameter()!},',
-          );
-        } else {
           buffer.writeln(
             'required ${parameter.fullType} ${parameter.name},',
           );
-        }
       }
     }
 
@@ -205,62 +184,6 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     }
 
     // Constructor Parameters Fields End
-
-    buffer.writeln();
-
-    // Constructor.initial Parameters Start
-    buffer.writeln('$generatedClassName.withDefaults(');
-
-    // Constructor.initial Parameters Fields
-    // ParameterName, DefaultValue
-    final parametersWithDefaultValue = <String, _FilterParameter>{};
-    final parametersWithoutDefaultValue = <_FilterParameter>[];
-    // var allFieldsHaveDefaultValue = true;
-    // Fill data
-    for (final filter in filters) {
-      for (final parameter in filter.getFilterParameters()) {
-        if (parameter.defaultValue != null) {
-          parametersWithDefaultValue[parameter.name] = parameter;
-        } else {
-          parametersWithoutDefaultValue.add(parameter);
-        }
-      }
-    }
-
-    if (parametersWithoutDefaultValue.isNotEmpty) {
-      buffer.writeln('{');
-
-      for (final parameter in parametersWithoutDefaultValue) {
-        buffer.writeln(
-          'required ${parameter.fullType} ${parameter.name},',
-        );
-      }
-
-      buffer.writeln('}');
-    }
-
-    // Constructor.initial Parameters End
-    buffer.writeln(')');
-
-    // Constructor.initial Body Start
-    buffer.writeln(': this(');
-
-    //
-    buffer.writeln('/// Default Values');
-    for (final entry in parametersWithDefaultValue.entries) {
-      final parameter = entry.value;
-      final defaultValueVarName = parameter.getDefaultNameForParameter()!;
-      buffer.writeln('${entry.key}: $defaultValueVarName,');
-    }
-
-    //
-    buffer.writeln('/// Non-Default Values');
-    for (final parameter in parametersWithoutDefaultValue) {
-      buffer.writeln('${parameter.name}: ${parameter.name},');
-    }
-
-    // Constructor.initial Body End
-    buffer.writeln(');');
 
     buffer.writeln();
 
@@ -356,36 +279,6 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     buffer.writeln(');');
 
     buffer.writeln();
-
-    // Defaults Fields Start
-    for (final filter in filters) {
-      for (final parameter in filter.getFilterParameters()) {
-        buffer.writeln(
-          '/// Default Values for ${parameter.name}',
-        );
-        final defaultValue = parameter.defaultValue;
-        if (defaultValue != null) {
-          final parameterNameWithFirstLetterUpperCase = parameter.name
-              .replaceFirst(parameter.name[0], parameter.name[0].toUpperCase());
-
-          buffer.writeln(
-            // ignore: lines_longer_than_80_chars
-            'static const ${parameter.fullType} ${parameter.getDefaultNameForParameter()!} = $defaultValue;',
-          );
-          buffer.writeln(
-            'bool get is${parameterNameWithFirstLetterUpperCase}Default =>',
-          );
-          buffer.writeln(
-            // ignore: lines_longer_than_80_chars
-            '${filter.filterName}.${parameter.fieldName} == ${parameter.getDefaultNameForParameter()!};',
-          );
-        } else {
-          buffer.writeln('/// No default value requested');
-        }
-        buffer.writeln();
-      }
-      buffer.writeln();
-    }
 
     // Class End
     buffer.writeln('}');
@@ -516,7 +409,6 @@ class _FilterParameter {
     required this.baseType,
     required this.isNullable,
     required this.fieldName,
-    required this.defaultValue,
   });
 
   /// The name of the parameter
@@ -533,24 +425,7 @@ class _FilterParameter {
   /// 'min' or 'max'
   final String fieldName;
 
-  /// The default value for the parameter
-  final String? defaultValue;
-
   String get fullType => isNullable ? '$baseType?' : baseType;
-
-  /// Returns the default name for the parameter
-  ///
-  /// Can return null if default value is null
-  String? getDefaultNameForParameter() {
-    if (defaultValue == null) {
-      return null;
-    }
-
-    final parameterNameWithFirstLetterUpperCase =
-        name.replaceFirst(name[0], name[0].toUpperCase());
-
-    return 'default$parameterNameWithFirstLetterUpperCase';
-  }
 }
 
 class _ValueFilterData extends _FilterData {
