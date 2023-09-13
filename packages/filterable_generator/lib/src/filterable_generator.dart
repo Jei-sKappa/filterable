@@ -72,27 +72,9 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     final classFields = classData.fields!;
 
-    // Make sure there are not duplicate annotations:
-    for (final fieldData in classFields) {
-      if (fieldData.rangeFilters.length > 1) {
-        throw StateError(
-            '(${fieldData.name}) A field must constain only 1 annotation from:'
-            ' @RangeFilter');
-      }
-      if (fieldData.valueFilters.length > 1) {
-        throw StateError(
-            '(${fieldData.name}) A field must constain only 1 annotation from:'
-            ' @ValueFilter');
-      }
-    }
-
     // Create a list of all filters
     final filters = <_FilterData>[];
     for (final fieldData in classFields) {
-      final customFilters = fieldData.customFilters;
-      final rangeFilter = fieldData.rangeFilters.firstOrNull;
-      final valueFilter = fieldData.valueFilters.firstOrNull;
-
       var hasAddedFilter = false;
 
       // Remove Nullability from Type
@@ -112,39 +94,37 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
         fieldData.type[0].toUpperCase(),
       );
 
-      if (customFilters.isNotEmpty) {
-        for (final customFilter in customFilters) {
-          final filterDartType = customFilter.filter ??
-              '$baseFilterDartType$customFilterTypeSuffix';
-          final filterName = '${fieldData.name}Filter';
+      for (final customFilter in fieldData.customFilters) {
+        final filterDartType =
+            customFilter.filter ?? '$baseFilterDartType$customFilterTypeSuffix';
+        final filterName = '${fieldData.name}Filter';
 
-          final existingFilterWithSameName =
-              _getFilterDataFromFilterName(filterName, filters);
-          if (existingFilterWithSameName != null) {
-            throw StateError(
-              _getExistingFilterNameErrorMessage(
-                existingFilterWithSameName,
-                filterDartType,
-                filterName,
-              ),
-            );
-          }
-
-          filters.add(
-            _CustomFilterData(
-              customFilter: customFilter,
-              fieldType: fieldData.type,
-              fieldName: fieldData.name,
-              fieldKey: fieldData.fieldKey,
-              filterName: filterName,
-              filterDartType: filterDartType,
+        final existingFilterWithSameName =
+            _getFilterDataFromFilterName(filterName, filters);
+        if (existingFilterWithSameName != null) {
+          throw StateError(
+            _getExistingFilterNameErrorMessage(
+              existingFilterWithSameName,
+              filterDartType,
+              filterName,
             ),
           );
         }
+
+        filters.add(
+          _CustomFilterData(
+            customFilter: customFilter,
+            fieldType: fieldData.type,
+            fieldName: fieldData.name,
+            fieldKey: fieldData.fieldKey,
+            filterName: filterName,
+            filterDartType: filterDartType,
+          ),
+        );
         hasAddedFilter = true;
       }
 
-      if (rangeFilter != null) {
+      for (final rangeFilter in fieldData.rangeFilters) {
         // Create a var with fieldData.name! with the first letter in upper case
         final fieldNameWithFirstLetterUpperCase = fieldData.name
             .replaceFirst(fieldData.name[0], fieldData.name[0].toUpperCase());
@@ -195,7 +175,14 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
       // If no filter is provided (or only a ValueFilter) defaults
       // to [ValueFilter]
-      if (!hasAddedFilter || valueFilter != null) {
+      late final List<ValueFilter> fixedValueFilters;
+      if (!hasAddedFilter && fieldData.valueFilters.isEmpty) {
+        fixedValueFilters = [const ValueFilter()];
+      }
+      else{
+        fixedValueFilters = fieldData.valueFilters;
+      }
+      for (final valueFilter in fixedValueFilters) {
         final filterDartType = '${baseFilterDartType}Filter';
         final filterName = '${fieldData.name}Filter';
 
@@ -213,7 +200,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
         filters.add(
           _ValueFilterData(
-            valueFilter: valueFilter ?? const ValueFilter(),
+            valueFilter: valueFilter,
             fieldType: fieldData.type,
             fieldName: fieldData.name,
             fieldKey: fieldData.fieldKey,
