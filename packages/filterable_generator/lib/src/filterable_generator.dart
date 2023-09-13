@@ -97,7 +97,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       for (final customFilter in fieldData.customFilters) {
         final filterDartType =
             customFilter.filter ?? '$baseFilterDartType$customFilterTypeSuffix';
-        final filterName = '${fieldData.name}Filter';
+        final filterName = customFilter.name ?? '${fieldData.name}Filter';
 
         final existingFilterWithSameName =
             _getFilterDataFromFilterName(filterName, filters);
@@ -129,8 +129,24 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
         final fieldNameWithFirstLetterUpperCase = fieldData.name
             .replaceFirst(fieldData.name[0], fieldData.name[0].toUpperCase());
 
+        var minParameterName = 'min$fieldNameWithFirstLetterUpperCase';
+        var maxParameterName = 'max$fieldNameWithFirstLetterUpperCase';
+
         final filterDartType = '${baseFilterDartType}RangeFilter';
-        final filterName = '${fieldData.name}RangeFilter';
+        late final String filterName;
+        if (rangeFilter.name == null) {
+          filterName = '${fieldData.name}RangeFilter';
+        } else {
+          filterName = rangeFilter.name!;
+
+          // Update Parameters Name to avoid collisions
+          final fixedName = filterName.replaceFirst(
+            filterName[0],
+            filterName[0].toUpperCase(),
+          );
+          minParameterName = '${minParameterName}Of$fixedName';
+          maxParameterName = '${maxParameterName}Of$fixedName';
+        }
 
         final existingFilterWithSameName =
             _getFilterDataFromFilterName(filterName, filters);
@@ -156,14 +172,14 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
               // Add Nullability to Type
               baseType: fieldTypeWithoutNullability,
               isNullable: true,
-              name: 'min$fieldNameWithFirstLetterUpperCase',
+              name: minParameterName,
               fieldName: 'min',
             ),
             maxFilterParameter: _FilterParameter(
               // Add Nullability to Type
               baseType: fieldTypeWithoutNullability,
               isNullable: true,
-              name: 'max$fieldNameWithFirstLetterUpperCase',
+              name: maxParameterName,
               fieldName: 'max',
             ),
             filterName: filterName,
@@ -178,13 +194,27 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       late final List<ValueFilter> fixedValueFilters;
       if (!hasAddedFilter && fieldData.valueFilters.isEmpty) {
         fixedValueFilters = [const ValueFilter()];
-      }
-      else{
+      } else {
         fixedValueFilters = fieldData.valueFilters;
       }
       for (final valueFilter in fixedValueFilters) {
         final filterDartType = '${baseFilterDartType}Filter';
-        final filterName = '${fieldData.name}Filter';
+
+        var parameterName = fieldData.name;
+
+        late final String filterName;
+        if (valueFilter.name == null) {
+          filterName = '${fieldData.name}Filter';
+        } else {
+          filterName = valueFilter.name!;
+
+          // Update Parameters Name to avoid collisions
+          final fixedName = filterName.replaceFirst(
+            filterName[0],
+            filterName[0].toUpperCase(),
+          );
+          parameterName = '${parameterName}Of$fixedName';
+        }
 
         final existingFilterWithSameName =
             _getFilterDataFromFilterName(filterName, filters);

@@ -51,17 +51,21 @@ class FieldData {
 
   factory FieldData.fromElement(FieldElement element) {
     RangeFilter getRangeFilter(DartObject annotation) {
-      return const RangeFilter();
+      final name = annotation.getField('name')!.toStringValue();
+      return RangeFilter(name);
     }
 
     ValueFilter getValueFilter(DartObject annotation) {
-      return const ValueFilter();
+      final name = annotation.getField('name')!.toStringValue();
+      return ValueFilter(name);
     }
 
     CustomFilter getCustomFilter(DartObject annotation) {
       final filter = annotation.getField('filter')!.toStringValue();
-      return CustomFilter(
-        filter,
+      final name = annotation.getField('name')!.toStringValue();
+      return CustomFilter.named(
+        name,
+        filter: filter,
       );
     }
 
