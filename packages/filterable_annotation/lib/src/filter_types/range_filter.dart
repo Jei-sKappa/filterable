@@ -7,5 +7,8 @@ class RangeFilter implements FilterType {
   /// Creates a new [RangeFilter] instance.
   ///
   /// Only required when the default behavior is not desired.
-  const RangeFilter();
+  const RangeFilter([this.name]);
+
+  @override
+  final String? name;
 }

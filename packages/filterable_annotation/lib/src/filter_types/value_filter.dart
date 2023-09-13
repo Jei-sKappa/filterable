@@ -7,5 +7,8 @@ class ValueFilter implements FilterType {
   /// Creates a new [ValueFilter] instance.
   ///
   /// Only required when the default behavior is not desired.
-  const ValueFilter();
+  const ValueFilter([this.name]);
+
+  @override
+  final String? name;
 }
