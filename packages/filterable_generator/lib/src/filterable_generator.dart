@@ -291,7 +291,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
         // );
         buffer.writeln('${filter.filterName}: ${filter.filterName}');
         buffer.writeln(' ?? ');
-        buffer.writeln('this.${filter.filterName}');
+        buffer.writeln('this.${filter.filterName},');
       } else {
         for (final parameter in filterParameters) {
           // If the parameter is nullable, it should be wrapped in a Function
@@ -302,7 +302,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
             buffer.writeln(' ? ');
             buffer.writeln('${parameter.name}()');
             buffer.writeln(' : ');
-            buffer.writeln('${filter.filterName}.${parameter.fieldName},');
+            buffer.writeln('${filter.filterName}.${parameter.fieldName}');
           } else {
             // ignore: lines_longer_than_80_chars
             final fallBackString =
@@ -321,9 +321,9 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
             buffer.writeln(' ?? ');
             buffer.writeln(fallBackString);
           }
+          buffer.writeln(',');
         }
       }
-      buffer.writeln(',');
     }
 
     // CopyWith Body End
