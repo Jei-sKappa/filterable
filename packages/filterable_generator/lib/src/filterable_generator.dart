@@ -262,6 +262,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     // Constructor Parameters Fields
     for (final filter in filters) {
+      buffer.writeln('/// Parameters used by ${filter.filterName} to filter [${classData.name}]s');
       final filterParameters = filter.getFilterParameters();
       if (filterParameters == null) {
         // ignore: lines_longer_than_80_chars
