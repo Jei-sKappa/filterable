@@ -172,10 +172,18 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     // Constructor Parameters Fields
     for (final filter in filters) {
-      for (final parameter in filter.getFilterParameters()) {
+      final filterParameters = filter.getFilterParameters();
+      if (filterParameters == null) {
+        // ignore: lines_longer_than_80_chars
+        buffer.writeln(
+          'required ${filter.filterDartType} ${filter.filterName},',
+        );
+      } else {
+        for (final parameter in filterParameters) {
           buffer.writeln(
             'required ${parameter.fullType} ${parameter.name},',
           );
+        }
       }
     }
 
@@ -188,12 +196,18 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       final filter = filters[i];
 
       // Type Filter Start
-      buffer.writeln('${filter.filterName} = ${filter.filterDartType}');
-      buffer.writeln('(');
-      for (final parameter in filter.getFilterParameters()) {
-        buffer.writeln('${parameter.name},');
+      buffer.writeln('${filter.filterName} =');
+      final filterParameters = filter.getFilterParameters();
+      if (filterParameters == null) {
+        buffer.writeln(filter.filterName);
+      } else {
+        buffer.writeln(filter.filterDartType);
+        buffer.writeln('(');
+        for (final parameter in filterParameters) {
+          buffer.writeln('${parameter.name},');
+        }
+        buffer.writeln(')');
       }
-      buffer.writeln(')');
 
       // Line Terminator
       if (i == filters.length - 1) {
@@ -246,13 +260,18 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     //
     for (final filter in filters) {
-      for (final parameter in filter.getFilterParameters()) {
-        // If the parameter is nullable, it should be wrapped in a Function
-        // to be able to use the null-aware operator
-        final maybeFunction = parameter.isNullable ? 'Function()?' : '';
-        buffer.writeln(
-          '${parameter.baseType}? $maybeFunction ${parameter.name},',
-        );
+      final filterParameters = filter.getFilterParameters();
+      if (filterParameters == null) {
+        buffer.writeln('${filter.filterDartType}? ${filter.filterName},');
+      } else {
+        for (final parameter in filterParameters) {
+          // If the parameter is nullable, it should be wrapped in a Function
+          // to be able to use the null-aware operator
+          final maybeFunction = parameter.isNullable ? 'Function()?' : '';
+          buffer.writeln(
+            '${parameter.baseType}? $maybeFunction ${parameter.name},',
+          );
+        }
       }
     }
 
@@ -264,35 +283,47 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     //
     for (final filter in filters) {
-      for (final parameter in filter.getFilterParameters()) {
-        // If the parameter is nullable, it should be wrapped in a Function
-        // to be able to use the null-aware operator
-        if (parameter.isNullable) {
-          buffer.writeln('${parameter.name}: ${parameter.name}');
-          buffer.writeln(' != null ');
-          buffer.writeln(' ? ');
-          buffer.writeln('${parameter.name}()');
-          buffer.writeln(' : ');
-          buffer.writeln('${filter.filterName}.${parameter.fieldName},');
-        } else {
-          // ignore: lines_longer_than_80_chars
-          final fallBackString =
-              '(${filter.filterName}.${parameter.fieldName})!';
-          buffer.writeln('/// It is used $fallBackString because');
-          buffer.writeln(
-            '/// [${filter.filterName}.${parameter.fieldName}] corresponds to [${parameter.name}] ',
-          );
-          buffer.writeln(
-            '/// which is managed exclusively by [$generatedClassName]',
-          );
-          buffer.writeln(
-            '/// and, as requested by the constructor, it cannot be null',
-          );
-          buffer.writeln('${parameter.name}: ${parameter.name}');
-          buffer.writeln(' ?? ');
-          buffer.writeln('$fallBackString,');
+      final filterParameters = filter.getFilterParameters();
+      if (filterParameters == null) {
+        // ignore: lines_longer_than_80_chars
+        // buffer.writeln(
+        //   'required ${filter.filterDartType} ${filter.filterName},',
+        // );
+        buffer.writeln('${filter.filterName}: ${filter.filterName}');
+        buffer.writeln(' ?? ');
+        buffer.writeln('this.${filter.filterName}');
+      } else {
+        for (final parameter in filterParameters) {
+          // If the parameter is nullable, it should be wrapped in a Function
+          // to be able to use the null-aware operator
+          if (parameter.isNullable) {
+            buffer.writeln('${parameter.name}: ${parameter.name}');
+            buffer.writeln(' != null ');
+            buffer.writeln(' ? ');
+            buffer.writeln('${parameter.name}()');
+            buffer.writeln(' : ');
+            buffer.writeln('${filter.filterName}.${parameter.fieldName},');
+          } else {
+            // ignore: lines_longer_than_80_chars
+            final fallBackString =
+                '(${filter.filterName}.${parameter.fieldName})!';
+            buffer.writeln('/// It is used $fallBackString because');
+            buffer.writeln(
+              '/// [${filter.filterName}.${parameter.fieldName}] corresponds to [${parameter.name}] ',
+            );
+            buffer.writeln(
+              '/// which is managed exclusively by [$generatedClassName]',
+            );
+            buffer.writeln(
+              '/// and, as requested by the constructor, it cannot be null',
+            );
+            buffer.writeln('${parameter.name}: ${parameter.name}');
+            buffer.writeln(' ?? ');
+            buffer.writeln(fallBackString);
+          }
         }
       }
+      buffer.writeln(',');
     }
 
     // CopyWith Body End
@@ -420,7 +451,7 @@ sealed class _FilterData {
   final String filterName;
   final String filterDartType;
 
-  List<_FilterParameter> getFilterParameters();
+  List<_FilterParameter>? getFilterParameters();
 }
 
 class _FilterParameter {
@@ -461,7 +492,7 @@ class _CustomFilterData extends _FilterData {
         );
 
   @override
-  List<_FilterParameter> getFilterParameters() => [];
+  List<_FilterParameter>? getFilterParameters() => null;
 }
 
 class _ValueFilterData extends _FilterData {
