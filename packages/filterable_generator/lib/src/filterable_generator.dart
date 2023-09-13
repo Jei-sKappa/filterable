@@ -10,6 +10,30 @@ import 'package:source_gen/source_gen.dart';
 
 /// Generates a `*.filterable.dart` file for each annotated class.
 class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
+  _FilterData? _getFilterDataFromFilterName(
+    String newFilterName,
+    List<_FilterData> filters,
+  ) {
+    for (final filter in filters) {
+      if (filter.filterName == newFilterName) {
+        return filter;
+      }
+    }
+
+    return null;
+  }
+
+  String _getExistingFilterNameErrorMessage(
+    _FilterData filter,
+    String filterDartType,
+    String filterName,
+  ) =>
+      '(${filter.fieldType} ${filter.fieldName}) Cannot create '
+      '`$filterDartType $filterName` because '
+      ' already exists the variable '
+      '`${filter.filterDartType} ${filter.filterName}`.\n'
+      'Please, provide another name for $filterDartType or remove it.';
+
   @override
   String generateForAnnotatedElement(
     Element element,
@@ -86,15 +110,30 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
       if (customFilters.isNotEmpty) {
         for (final customFilter in customFilters) {
+          final filterDartType =
+              customFilter.filter ?? '$baseFilterDartType$customFilterSuffix';
+          final filterName = '${fieldData.name!}Filter';
+
+          final existingFilterWithSameName =
+              _getFilterDataFromFilterName(filterName, filters);
+          if (existingFilterWithSameName != null) {
+            throw StateError(
+              _getExistingFilterNameErrorMessage(
+                existingFilterWithSameName,
+                filterDartType,
+                filterName,
+              ),
+            );
+          }
+
           filters.add(
             _CustomFilterData(
               customFilter: customFilter,
               fieldType: fieldData.type!,
               fieldName: fieldData.name!,
               fieldKey: fieldData.fieldKey,
-              filterName: '${fieldData.name!}Filter',
-              filterDartType: customFilter.filter ??
-                  '$baseFilterDartType$customFilterSuffix',
+              filterName: filterName,
+              filterDartType: filterDartType,
             ),
           );
         }
@@ -105,6 +144,21 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
         // Create a var with fieldData.name! with the first letter in upper case
         final fieldNameWithFirstLetterUpperCase = fieldData.name!
             .replaceFirst(fieldData.name![0], fieldData.name![0].toUpperCase());
+
+        final filterDartType = '${baseFilterDartType}RangeFilter';
+        final filterName = '${fieldData.name!}RangeFilter';
+
+        final existingFilterWithSameName =
+            _getFilterDataFromFilterName(filterName, filters);
+        if (existingFilterWithSameName != null) {
+          throw StateError(
+            _getExistingFilterNameErrorMessage(
+              existingFilterWithSameName,
+              filterDartType,
+              filterName,
+            ),
+          );
+        }
 
         filters.add(
           _RangeFilterData(
@@ -128,8 +182,8 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
               name: 'max$fieldNameWithFirstLetterUpperCase',
               fieldName: 'max',
             ),
-            filterName: '${fieldData.name!}RangeFilter',
-            filterDartType: '${baseFilterDartType}RangeFilter',
+            filterName: filterName,
+            filterDartType: filterDartType,
           ),
         );
         hasAddedFilter = true;
@@ -138,6 +192,21 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       // If no filter is provided (or only a ValueFilter) defaults
       // to [ValueFilter]
       if (!hasAddedFilter || valueFilter != null) {
+        final filterDartType = '${baseFilterDartType}Filter';
+        final filterName = '${fieldData.name!}Filter';
+
+        final existingFilterWithSameName =
+            _getFilterDataFromFilterName(filterName, filters);
+        if (existingFilterWithSameName != null) {
+          throw StateError(
+            _getExistingFilterNameErrorMessage(
+              existingFilterWithSameName,
+              filterDartType,
+              filterName,
+            ),
+          );
+        }
+
         filters.add(
           _ValueFilterData(
             valueFilter: valueFilter ?? const ValueFilter(),
@@ -150,8 +219,8 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
               name: fieldData.name!,
               fieldName: 'value',
             ),
-            filterName: '${fieldData.name!}Filter',
-            filterDartType: '${baseFilterDartType}Filter',
+            filterName: filterName,
+            filterDartType: filterDartType,
           ),
         );
         hasAddedFilter = true;
