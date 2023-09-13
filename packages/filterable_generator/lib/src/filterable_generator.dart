@@ -24,17 +24,17 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     return null;
   }
 
-  String codeAnsi(String value) => value.bold.italic.underline;
+  String _codeAnsi(String value) => value.bold.italic.underline;
 
   String _getExistingFilterNameErrorMessage(
     _FilterData filter,
     String filterDartType,
     String filterName,
   ) =>
-      '(${codeAnsi("${filter.fieldType} ${filter.fieldName}")}) '
-      'Cannot create ${codeAnsi("$filterDartType $filterName")} because '
+      '(${_codeAnsi("${filter.fieldType} ${filter.fieldName}")}) '
+      'Cannot create ${_codeAnsi("$filterDartType $filterName")} because '
       'already exists the variable '
-      '${codeAnsi("${filter.filterDartType} ${filter.filterName}")}. '
+      '${_codeAnsi("${filter.filterDartType} ${filter.filterName}")}. '
       'Please, provide another name for $filterDartType or remove it.';
 
   @override
