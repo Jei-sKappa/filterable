@@ -2,6 +2,7 @@
 // ignore_for_file: implementation_imports, depend_on_referenced_packages, cascade_invocations
 
 import 'package:analyzer/dart/element/element.dart';
+import 'package:ansi_styles/extension.dart';
 import 'package:build/build.dart';
 import 'package:build/src/builder/build_step.dart';
 import 'package:filterable_annotation/filterable_annotation.dart';
@@ -23,15 +24,17 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     return null;
   }
 
+  String codeAnsi(String value) => value.bold.italic.underline;
+
   String _getExistingFilterNameErrorMessage(
     _FilterData filter,
     String filterDartType,
     String filterName,
   ) =>
-      '(${filter.fieldType} ${filter.fieldName}) Cannot create '
-      '`$filterDartType $filterName` because '
-      ' already exists the variable '
-      '`${filter.filterDartType} ${filter.filterName}`.\n'
+      '(${codeAnsi("${filter.fieldType} ${filter.fieldName}")}) '
+      'Cannot create ${codeAnsi("$filterDartType $filterName")} because '
+      'already exists the variable '
+      '${codeAnsi("${filter.filterDartType} ${filter.filterName}")}. '
       'Please, provide another name for $filterDartType or remove it.';
 
   @override
