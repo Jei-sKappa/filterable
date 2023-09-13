@@ -7,7 +7,7 @@ class FilterableGen {
   const FilterableGen({
     this.generateFields = false,
     this.generateGetValueFromFieldsExtension = false,
-    this.customFilterSuffix = 'Filter',
+    this.customFilterTypeSuffix = 'Filter',
   });
 
   /// Whether to generate the fields or not
@@ -31,7 +31,7 @@ class FilterableGen {
   /// // Will generate a filter of type: 'MyClass<customFilterSuffix>'
   /// final MyClass myString;
   /// ```
-  final String customFilterSuffix;
+  final String customFilterTypeSuffix;
 }
 
 /// Annotation to mark a class as filterable

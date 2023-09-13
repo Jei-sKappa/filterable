@@ -48,8 +48,9 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     final generateGetValueFromFieldsExtension = annotation.objectValue
         .getField('generateGetValueFromFieldsExtension')!
         .toBoolValue()!;
-    final customFilterSuffix =
-        annotation.objectValue.getField('customFilterSuffix')!.toStringValue()!;
+    final customFilterTypeSuffix = annotation.objectValue
+        .getField('customFilterTypeSuffix')!
+        .toStringValue()!;
 
     if (!generateFields && generateGetValueFromFieldsExtension) {
       throw StateError(
@@ -113,8 +114,8 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
       if (customFilters.isNotEmpty) {
         for (final customFilter in customFilters) {
-          final filterDartType =
-              customFilter.filter ?? '$baseFilterDartType$customFilterSuffix';
+          final filterDartType = customFilter.filter ??
+              '$baseFilterDartType$customFilterTypeSuffix';
           final filterName = '${fieldData.name!}Filter';
 
           final existingFilterWithSameName =
