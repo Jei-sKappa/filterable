@@ -97,9 +97,9 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
       // Remove Nullability from Type
       // String? -> String (=> String?Filter -> StringFilter)
-      final fieldTypeWithoutNullability = fieldData.type!.replaceFirst('?', '');
+      final fieldTypeWithoutNullability = fieldData.type.replaceFirst('?', '');
       late bool isNullable;
-      if (fieldTypeWithoutNullability != fieldData.type!) {
+      if (fieldTypeWithoutNullability != fieldData.type) {
         isNullable = true;
       } else {
         isNullable = false;
@@ -108,15 +108,15 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       // Make field's type with first letter in upper case
       // int -> Int (=> intFilter -> IntFilter)
       final baseFilterDartType = fieldTypeWithoutNullability.replaceFirst(
-        fieldData.type![0],
-        fieldData.type![0].toUpperCase(),
+        fieldData.type[0],
+        fieldData.type[0].toUpperCase(),
       );
 
       if (customFilters.isNotEmpty) {
         for (final customFilter in customFilters) {
           final filterDartType = customFilter.filter ??
               '$baseFilterDartType$customFilterTypeSuffix';
-          final filterName = '${fieldData.name!}Filter';
+          final filterName = '${fieldData.name}Filter';
 
           final existingFilterWithSameName =
               _getFilterDataFromFilterName(filterName, filters);
@@ -133,8 +133,8 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
           filters.add(
             _CustomFilterData(
               customFilter: customFilter,
-              fieldType: fieldData.type!,
-              fieldName: fieldData.name!,
+              fieldType: fieldData.type,
+              fieldName: fieldData.name,
               fieldKey: fieldData.fieldKey,
               filterName: filterName,
               filterDartType: filterDartType,
@@ -146,11 +146,11 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
       if (rangeFilter != null) {
         // Create a var with fieldData.name! with the first letter in upper case
-        final fieldNameWithFirstLetterUpperCase = fieldData.name!
-            .replaceFirst(fieldData.name![0], fieldData.name![0].toUpperCase());
+        final fieldNameWithFirstLetterUpperCase = fieldData.name
+            .replaceFirst(fieldData.name[0], fieldData.name[0].toUpperCase());
 
         final filterDartType = '${baseFilterDartType}RangeFilter';
-        final filterName = '${fieldData.name!}RangeFilter';
+        final filterName = '${fieldData.name}RangeFilter';
 
         final existingFilterWithSameName =
             _getFilterDataFromFilterName(filterName, filters);
@@ -167,8 +167,8 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
         filters.add(
           _RangeFilterData(
             rangeFilter: rangeFilter,
-            fieldType: fieldData.type!,
-            fieldName: fieldData.name!,
+            fieldType: fieldData.type,
+            fieldName: fieldData.name,
             fieldKey: fieldData.fieldKey,
             // RangeFilter has 2 parameters: min and max
             // they should be nullable
@@ -197,7 +197,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       // to [ValueFilter]
       if (!hasAddedFilter || valueFilter != null) {
         final filterDartType = '${baseFilterDartType}Filter';
-        final filterName = '${fieldData.name!}Filter';
+        final filterName = '${fieldData.name}Filter';
 
         final existingFilterWithSameName =
             _getFilterDataFromFilterName(filterName, filters);
@@ -214,13 +214,13 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
         filters.add(
           _ValueFilterData(
             valueFilter: valueFilter ?? const ValueFilter(),
-            fieldType: fieldData.type!,
-            fieldName: fieldData.name!,
+            fieldType: fieldData.type,
+            fieldName: fieldData.name,
             fieldKey: fieldData.fieldKey,
             filterParameter: _FilterParameter(
               baseType: fieldTypeWithoutNullability,
               isNullable: isNullable,
-              name: fieldData.name!,
+              name: fieldData.name,
               fieldName: 'value',
             ),
             filterName: filterName,

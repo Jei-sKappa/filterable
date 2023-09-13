@@ -109,8 +109,8 @@ class FieldData {
     );
   }
 
-  String? name;
-  String? type;
+  String name;
+  String type;
   List<RangeFilter> rangeFilters;
   List<ValueFilter> valueFilters;
   List<CustomFilter> customFilters;
