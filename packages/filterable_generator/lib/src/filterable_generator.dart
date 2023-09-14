@@ -37,6 +37,14 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       '${_codeAnsi("${filter.filterDartType} ${filter.filterName}")}. '
       'Please, provide another name for $filterDartType or remove it.';
 
+  String _getFilterDartType(String currentFilterDartType) {
+    return currentFilterDartType.replaceAll('<', 'Of')
+    .replaceAll('>', '')
+    .replaceAll(',', 'And')
+    .replaceAll(' ', '')
+    ;
+  }
+
   @override
   String generateForAnnotatedElement(
     Element element,
@@ -104,8 +112,9 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       );
 
       for (final customFilter in fieldData.customFilters) {
-        final filterDartType =
-            customFilter.filter ?? '$baseFilterDartType$customFilterTypeSuffix';
+        final filterDartType = _getFilterDartType(
+          customFilter.filter ?? '$baseFilterDartType$customFilterTypeSuffix',
+        );
         final filterName = customFilter.name ?? '${fieldData.name}Filter';
 
         final existingFilterWithSameName =
@@ -141,7 +150,8 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
         var minParameterName = 'min$fieldNameWithFirstLetterUpperCase';
         var maxParameterName = 'max$fieldNameWithFirstLetterUpperCase';
 
-        final filterDartType = '${baseFilterDartType}RangeFilter';
+        final filterDartType =
+            _getFilterDartType('${baseFilterDartType}RangeFilter');
         late final String filterName;
         if (rangeFilter.name == null) {
           filterName = '${fieldData.name}RangeFilter';
@@ -207,7 +217,9 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
         fixedValueFilters = fieldData.valueFilters;
       }
       for (final valueFilter in fixedValueFilters) {
-        final filterDartType = '${baseFilterDartType}Filter';
+        final filterDartType = _getFilterDartType(
+          '${baseFilterDartType}Filter',
+        );
 
         var parameterName = fieldData.name;
 
@@ -330,7 +342,8 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     // Filters Declaration
     for (final filter in filters) {
       buffer.writeln(
-          "/// The filter for [${classData.name}]'s ${filter.fieldName}");
+        "/// The filter for [${classData.name}]'s ${filter.fieldName}",
+      );
       buffer.writeln('final ${filter.filterDartType} ${filter.filterName};');
       buffer.writeln();
     }
