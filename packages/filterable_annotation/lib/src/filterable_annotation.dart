@@ -5,10 +5,23 @@ import 'package:meta/meta_meta.dart';
 class FilterableGen {
   /// Default constructor
   const FilterableGen({
+    this.generateSafeFilter = true,
     this.generateFields = false,
     this.generateGetValueFromFieldsExtension = false,
     this.customFilterTypeSuffix = 'Filter',
   });
+  /// Whether to generate the safe filter or not.
+  /// 
+  /// The `safeFilter` is a function that calls the
+  /// default `filter` function. The main difference
+  /// is that the `safeFilter` require to pass all the
+  /// necessary adapters to correctly filter the Object.
+  /// 
+  /// This totally* excludes runtime errors.
+  /// 
+  /// (*) This is not 100% true, because it depends on
+  /// the users' implementation of the adapters.
+  final bool generateSafeFilter;
 
   /// Whether to generate the fields or not
   final bool generateFields;
