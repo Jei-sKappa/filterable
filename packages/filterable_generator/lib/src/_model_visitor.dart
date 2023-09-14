@@ -19,7 +19,9 @@ class ModelVisitor extends SimpleElementVisitor<void> {
   void visitConstructorElement(ConstructorElement element) {
     final returnType = element.returnType.toString();
     classData.name = returnType.replaceFirst('*', '');
-    if (element.isFactory) {
+    // This should be a factory constructor with no name:
+    // default constructor
+    if (element.isFactory && element.name == '') {
       for (final parameter in element.parameters) {
         final fieldData = FieldData.fromElement(parameter);
         classData.fields ??= <FieldData>[];
