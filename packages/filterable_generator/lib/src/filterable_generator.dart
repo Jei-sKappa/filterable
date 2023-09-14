@@ -334,6 +334,37 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     buffer.writeln('@override');
     buffer.writeln('List<FilterableField> get filters => [');
 
+    // Determine the name of the field that will be used as an identifier
+    late final String enumIdentifierFieldName;
+    final idNameOptions = <String>[
+      'id',
+      'identifier',
+      'key',
+      'fieldId',
+      'fieldIndentifier',
+      'fieldKey',
+    ];
+
+    var hasFindedId = false;
+    for (final idName in idNameOptions) {
+      if (!classFields.any((field) => field.name == idName)) {
+        enumIdentifierFieldName = idName;
+        hasFindedId = true;
+        break;
+      }
+    }
+    if (!hasFindedId) {
+      var i = 0;
+      while (!hasFindedId) {
+        i++;
+        final sequenceId = 'id$i';
+        if (!classFields.any((field) => field.name == sequenceId)) {
+          enumIdentifierFieldName = sequenceId;
+          hasFindedId = true;
+        }
+      }
+    }
+
     //
     for (final filter in filters) {
       // FilterableField Start
@@ -341,7 +372,10 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
       // FieldId
       if (generateFields) {
-        buffer.writeln('fieldId: $generatedEnumName.${filter.fieldName}.id,');
+        buffer.writeln(
+          // ignore: lines_longer_than_80_chars
+          'fieldId: $generatedEnumName.${filter.fieldName}.$enumIdentifierFieldName,',
+        );
       } else {
         buffer.writeln("fieldId: '${filter.fieldKey}',");
       }
@@ -555,11 +589,11 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     }
 
     // enum Constructor
-    buffer.writeln('const $generatedEnumName(this.id);');
+    buffer.writeln('const $generatedEnumName(this.$enumIdentifierFieldName);');
 
     // enum Custom Fields
     // id
-    buffer.writeln('final String id;');
+    buffer.writeln('final String $enumIdentifierFieldName;');
 
     // enum End
     buffer.writeln('}');
