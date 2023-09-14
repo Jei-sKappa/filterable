@@ -43,6 +43,8 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     ConstantReader annotation,
     BuildStep buildStep,
   ) {
+    final generateSafeFilter =
+        annotation.objectValue.getField('generateSafeFilter')!.toBoolValue()!;
     final generateFields =
         annotation.objectValue.getField('generateFields')!.toBoolValue()!;
     final generateGetValueFromFieldsExtension = annotation.objectValue
@@ -254,6 +256,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     // Class Start
     final generatedClassName = '${classData.name}Filterable';
     final generatedEnumName = '${classData.name}Field';
+    final generatedAdaptersName = '${classData.name}Adapters';
     buffer.writeln('/// Filter of ${element.name}');
     buffer.writeln('class $generatedClassName extends Filterable {');
 
@@ -262,7 +265,9 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     // Constructor Parameters Fields
     for (final filter in filters) {
-      buffer.writeln('/// Parameters used by ${filter.filterName} to filter [${classData.name}]s');
+      buffer.writeln(
+        '/// Parameters used by ${filter.filterName} to filter [${classData.name}]s',
+      );
       final filterParameters = filter.getFilterParameters();
       if (filterParameters == null) {
         // ignore: lines_longer_than_80_chars
@@ -346,6 +351,24 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     buffer.writeln();
 
+    // SafeFilter Function Start
+    if (generateSafeFilter) {
+      buffer.writeln('''
+      T safeFilter<T>(
+        T data, {
+        bool descending = false,
+        required List<String> fieldPath,
+        required $generatedAdaptersName<T> adapterGroup,
+      }) =>
+          super.filter(
+            data,
+            fieldPath: fieldPath,
+            descending: descending,
+            adapters: adapterGroup.adapters,
+          );
+      ''');
+    }
+
     // CopyWith Parameters Start
     buffer.writeln('$generatedClassName copyWith({');
 
@@ -424,6 +447,75 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     // Class End
     buffer.writeln('}');
+
+    // AdapterGroup Generator
+    if (generateSafeFilter) {
+      // AdapterGroup Start
+      buffer.writeln("/// [${element.name}]'s [FilterAdapterGroup]");
+      // ignore: lines_longer_than_80_chars
+      buffer.writeln(
+        'class $generatedAdaptersName<T> extends FilterAdapterGroup<T> {',
+      );
+
+      //
+      // Make it a set of <String,String>
+      final allUniqueRequestedFilterData = filters.map(
+        (filter) {
+          final filterDartType = filter.filterDartType;
+          final adapterOfFilterName =
+              // ignore: lines_longer_than_80_chars
+              '${filterDartType.replaceFirst(filterDartType[0], filterDartType[0].toLowerCase())}Adapter';
+
+          return (
+            filterDartType: filterDartType,
+            adapterOfFilterName: adapterOfFilterName,
+          );
+        },
+      ).toSet();
+
+      // AdapterGroup Constructor Start
+      buffer.writeln('$generatedAdaptersName({');
+
+      //
+      for (final filterData in allUniqueRequestedFilterData) {
+        final adapterOfFilterName = filterData.adapterOfFilterName;
+
+        buffer.writeln(
+          // ignore: lines_longer_than_80_chars
+          'required this.$adapterOfFilterName,',
+        );
+      }
+
+      // AdapterGroup Constructor End
+      buffer.writeln('})');
+
+      // AdapterGroup Constructor Body Start
+      buffer.writeln(': super([');
+
+      //
+      for (final filterData in allUniqueRequestedFilterData) {
+        buffer.writeln('${filterData.adapterOfFilterName},');
+      }
+
+      // AdapterGroup Constructor Body End
+      buffer.writeln(']);');
+
+      buffer.writeln();
+
+      // AdapterGroup Fields
+      for (final filterData in allUniqueRequestedFilterData) {
+        final filterDartType = filterData.filterDartType;
+        final adapterOfFilterName = filterData.adapterOfFilterName;
+
+        buffer.writeln(
+          'final FilterAdapter<T, $filterDartType> $adapterOfFilterName;',
+        );
+        buffer.writeln();
+      }
+
+      // AdapterGroup End
+      buffer.writeln('}');
+    }
 
     // Fields Generator
     if (!generateFields) {
