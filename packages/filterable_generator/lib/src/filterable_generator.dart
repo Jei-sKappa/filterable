@@ -264,10 +264,13 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     final generatedClassName = '${classData.name}Filterable';
     final generatedEnumName = '${classData.name}Field';
     final generatedAdaptersName = '${classData.name}Adapters';
-    buffer.writeln('/// Filter of ${element.name}');
+    buffer.writeln('/// {@template ${element.name}}');
+    buffer.writeln("/// [${element.name}]'s [Filterable]");
+    buffer.writeln('/// {@endtemplate}');
     buffer.writeln('class $generatedClassName extends Filterable {');
 
     // Constructor Parameters Start
+    buffer.writeln('/// {@macro ${element.name}}');
     buffer.writeln('$generatedClassName({');
 
     // Constructor Parameters Fields
@@ -326,6 +329,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     // Filters Declaration
     for (final filter in filters) {
+      buffer.writeln("/// The filter for [${classData.name}]'s ${filter.fieldName}");
       buffer.writeln('final ${filter.filterDartType} ${filter.filterName};');
       buffer.writeln();
     }
@@ -395,6 +399,15 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     // SafeFilter Function Start
     if (generateSafeFilter) {
       buffer.writeln('''
+      /// A wrapper around [$generatedClassName].[filter].
+      /// The only difference is that [safeFilter]
+      /// require to pass all the necessary adapters in
+      /// order to correctly filter the Object.
+      /// 
+      /// This totally* excludes runtime errors.
+      /// 
+      /// (*) This is not 100% true, because it depends on
+      /// your implementation of the adapters.      
       T safeFilter<T>(
         T data, {
         bool descending = false,
@@ -411,6 +424,8 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     }
 
     // CopyWith Parameters Start
+    buffer.writeln('/// Creates a copy of [$generatedClassName] with');
+    buffer.writeln('/// the specified fields replaced with the new values.');
     buffer.writeln('$generatedClassName copyWith({');
 
     //
@@ -492,7 +507,10 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     // AdapterGroup Generator
     if (generateSafeFilter) {
       // AdapterGroup Start
-      buffer.writeln("/// [${element.name}]'s [FilterAdapterGroup]");
+      buffer.writeln('/// {@template $generatedAdaptersName}');
+      buffer.writeln("/// [${element.name}]'s [FilterAdapterGroup].");
+      buffer.writeln('/// Used to generate the safeFilter function.');
+      buffer.writeln('/// {@endtemplate}');
       // ignore: lines_longer_than_80_chars
       buffer.writeln(
         'class $generatedAdaptersName<T> extends FilterAdapterGroup<T> {',
@@ -515,6 +533,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       ).toSet();
 
       // AdapterGroup Constructor Start
+      buffer.writeln('/// {@macro $generatedAdaptersName}');
       buffer.writeln('$generatedAdaptersName({');
 
       //
@@ -548,6 +567,9 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
         final filterDartType = filterData.filterDartType;
         final adapterOfFilterName = filterData.adapterOfFilterName;
 
+        buffer.writeln(
+          "/// [$filterDartType]'s [FilterAdapter]",
+        );
         buffer.writeln(
           'final FilterAdapter<T, $filterDartType> $adapterOfFilterName;',
         );
@@ -592,7 +614,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     buffer.writeln('const $generatedEnumName(this.$enumIdentifierFieldName);');
 
     // enum Custom Fields
-    // id
+    buffer.writeln('/// The identifier of the field');
     buffer.writeln('final String $enumIdentifierFieldName;');
 
     // enum End
