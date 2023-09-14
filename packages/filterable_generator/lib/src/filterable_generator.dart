@@ -329,7 +329,8 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     // Filters Declaration
     for (final filter in filters) {
-      buffer.writeln("/// The filter for [${classData.name}]'s ${filter.fieldName}");
+      buffer.writeln(
+          "/// The filter for [${classData.name}]'s ${filter.fieldName}");
       buffer.writeln('final ${filter.filterDartType} ${filter.filterName};');
       buffer.writeln();
     }
@@ -631,7 +632,10 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     buffer.writeln('/// Extension on [${classData.name}] that adds:');
     buffer.writeln('/// - [getValueFromField]');
     buffer.writeln('/// - [getAllValuesFromFields]');
-    buffer.writeln('extension GetValueFromFields on ${classData.name} {');
+    // ignore: lines_longer_than_80_chars
+    buffer.writeln(
+      'extension ${classData.name}GetValueFromFields on ${classData.name} {',
+    );
 
     // getValueFromField Start
     buffer
