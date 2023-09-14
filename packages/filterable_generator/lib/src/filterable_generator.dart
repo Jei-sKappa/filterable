@@ -68,11 +68,18 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     final classData = visitor.classData;
 
     // Check Validity
+    late final List<FieldData> classFields;
     if (classData.fields == null || classData.fields!.isEmpty) {
-      throw StateError('Cannot generate a filter with no fields');
+      // Try with constructorFields
+      if (classData.constructorFields == null ||
+          classData.constructorFields!.isEmpty) {
+        throw StateError('Cannot generate a filter with no fields');
+      } else {
+        classFields = classData.constructorFields!;
+      }
+    } else {
+      classFields = classData.fields!;
     }
-
-    final classFields = classData.fields!;
 
     // Create a list of all filters
     final filters = <_FilterData>[];

@@ -19,6 +19,13 @@ class ModelVisitor extends SimpleElementVisitor<void> {
   void visitConstructorElement(ConstructorElement element) {
     final returnType = element.returnType.toString();
     classData.name = returnType.replaceFirst('*', '');
+    if (element.isFactory) {
+      for (final parameter in element.parameters) {
+        final fieldData = FieldData.fromElement(parameter);
+        classData.fields ??= <FieldData>[];
+        classData.fields!.add(fieldData);
+      }
+    }
   }
 
   @override
@@ -33,10 +40,12 @@ class ClassData {
   ClassData({
     this.name,
     this.fields,
+    this.constructorFields,
   });
 
   String? name;
   List<FieldData>? fields;
+  List<FieldData>? constructorFields;
 }
 
 class FieldData {
@@ -49,7 +58,7 @@ class FieldData {
     required this.fieldKey,
   });
 
-  factory FieldData.fromElement(FieldElement element) {
+  factory FieldData.fromElement(Element element) {
     RangeFilter getRangeFilter(DartObject annotation) {
       final name = annotation.getField('name')!.toStringValue();
       return RangeFilter(name);
@@ -69,11 +78,22 @@ class FieldData {
       );
     }
 
+    // Field Type
+    late final String fieldType;
+    switch (element) {
+      case final FieldElement fieldElement:
+        fieldType = fieldElement.type.toString().replaceFirst('*', '');
+      case final ParameterElement parameterElement:
+        fieldType = parameterElement.type.toString().replaceFirst('*', '');
+      default:
+        throw Exception('Element must be a FieldElement or a ParameterElement');
+    }
+
     // Field name
     final fieldName = element.name;
-
-    // Field Type
-    final fieldType = element.type.toString().replaceFirst('*', '');
+    if (fieldName == null) {
+      throw Exception('Field name must not be null');
+    }
 
     // RangeFilter
     final rangeAnnotations = <RangeFilter>[];
