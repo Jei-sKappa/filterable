@@ -1,15 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:filterable/filterable.dart';
-import 'package:firebase_filterable_adapter/src/firebase_filter_type_adapter.dart';
+import 'package:firebase_filterable_adapter/src/firebase_filter_adapter.dart';
+import 'package:firebase_filterable_adapter/src/helpers/helpers.dart';
 
 /// Firebase's [DateTimeFilter] Adapter
 class FirebaseDateTimeFilterAdapter
-    extends FirebaseFilterTypeAdapter<DateTimeFilter> {
+    extends FirebaseFilterAdapter<DateTimeFilter> {
   @override
   Query<Map<String, dynamic>> getFilteredData(
     Query<Map<String, dynamic>> data,
-    String fieldId,
     DateTimeFilter filter, {
+    required List<String> fieldPath,
     required bool descending,
   }) {
     // CanFilter based on:
@@ -23,7 +24,7 @@ class FirebaseDateTimeFilterAdapter
     if (!canFilter) return data;
 
     return data.where(
-      fieldId,
+      getFieldIdFromFieldPath(fieldPath),
       isEqualTo: filter.value,
     );
   }
