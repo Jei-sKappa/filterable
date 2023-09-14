@@ -1,4 +1,4 @@
-import 'package:filterable/src/type_filterables/type_filterable.dart';
+import 'package:filterable/src/value_filterable.dart';
 
 /// String filter mode
 enum StringFilterMode {
@@ -14,7 +14,7 @@ enum StringFilterMode {
 
 /// A [StringFilter].
 /// This allows to filter strings
-class StringFilter extends TypeFilterable<String?> {
+class StringFilter implements ValueFilterable<String?> {
   /// Creates a StringFilter
   StringFilter(
     this.value, {

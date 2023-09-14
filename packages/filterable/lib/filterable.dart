@@ -1,7 +1,9 @@
 /// A Dart package that helps to implement filtering
 library filterable;
 
-export 'src/adapters/adapters.dart';
+export 'src/base_filterable.dart';
+export 'src/default_filterables/default_filterables.dart';
+export 'src/filter_adapter.dart';
 export 'src/filterable.dart';
-export 'src/type_filterables/default_type_filterables/default_type_filterables.dart';
-export 'src/type_filterables/type_filterable.dart';
+export 'src/range_filterable.dart';
+export 'src/value_filterable.dart';

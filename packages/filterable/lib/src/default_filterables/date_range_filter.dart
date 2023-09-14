@@ -1,8 +1,8 @@
-import 'package:filterable/src/type_filterables/type_filterable.dart';
+import 'package:filterable/src/range_filterable.dart';
 
 /// A [DateTimeRangeFilter]
 /// that allows to filter projects by date
-class DateTimeRangeFilter extends TypeRangeFilterable<DateTime> {
+class DateTimeRangeFilter implements RangeFilterable<DateTime> {
   /// Creates a DateFilter
   DateTimeRangeFilter(
     this.min,
