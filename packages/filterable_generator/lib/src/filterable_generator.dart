@@ -380,6 +380,16 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     buffer.writeln('@override');
     buffer.writeln('List<FilterableField> get filters => [');
 
+    // Get only the fields that are not ignored
+    final fieldsToGenerate = <FieldData>[];
+    for (final fieldData in classFields) {
+      final maybeIgnore = fieldData.ignoreAnnotations.firstOrNull;
+
+      if (maybeIgnore == null || !maybeIgnore.ignoreField) {
+        fieldsToGenerate.add(fieldData);
+      }
+    }
+
     // Determine the name of the field that will be used as an identifier
     late final String enumIdentifierFieldName;
     final idNameOptions = <String>[
@@ -393,7 +403,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     var hasFindedId = false;
     for (final idName in idNameOptions) {
-      if (!classFields.any((field) => field.name == idName)) {
+      if (!fieldsToGenerate.any((field) => field.name == idName)) {
         enumIdentifierFieldName = idName;
         hasFindedId = true;
         break;
@@ -404,7 +414,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       while (!hasFindedId) {
         i++;
         final sequenceId = 'id$i';
-        if (!classFields.any((field) => field.name == sequenceId)) {
+        if (!fieldsToGenerate.any((field) => field.name == sequenceId)) {
           enumIdentifierFieldName = sequenceId;
           hasFindedId = true;
         }
@@ -630,15 +640,6 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     //! Should Generate Fields
 
     buffer.writeln();
-
-    final fieldsToGenerate = <FieldData>[];
-    for (final fieldData in classFields) {
-      final maybeIgnore = fieldData.ignoreAnnotations.firstOrNull;
-
-      if (maybeIgnore == null || !maybeIgnore.ignoreField) {
-        fieldsToGenerate.add(fieldData);
-      }
-    }
 
     // enum Start
     buffer.writeln('/// Fields of ${classData.name}');
