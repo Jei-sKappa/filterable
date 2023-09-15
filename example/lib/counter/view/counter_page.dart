@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:example/counter/counter.dart';
 import 'package:example/l10n/l10n.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CounterPage extends StatelessWidget {
   const CounterPage({super.key});

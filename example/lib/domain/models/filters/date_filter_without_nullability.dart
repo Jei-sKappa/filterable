@@ -2,7 +2,7 @@ import 'package:filterable/filterable.dart';
 
 /// A [DateFilterWithoutNullability].
 /// This allows to filter strings
-class DateFilterWithoutNullability extends TypeFilterable<DateTime> {
+class DateFilterWithoutNullability implements ValueFilterable<DateTime> {
   /// Creates a [DateFilterWithoutNullability]
   DateFilterWithoutNullability(this.value);
 
