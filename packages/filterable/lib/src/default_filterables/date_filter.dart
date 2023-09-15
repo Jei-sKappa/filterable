@@ -1,8 +1,8 @@
-import 'package:filterable/src/type_filterables/type_filterable.dart';
+import 'package:filterable/src/value_filterable.dart';
 
 /// A [DateTimeFilter].
 /// This allows to filter strings
-class DateTimeFilter extends TypeFilterable<DateTime?> {
+class DateTimeFilter implements ValueFilterable<DateTime?> {
   /// Creates a DateTimeFilter
   DateTimeFilter(
     this.value, {

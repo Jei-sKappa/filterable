@@ -2,6 +2,7 @@
 // ignore_for_file: implementation_imports, depend_on_referenced_packages, cascade_invocations
 
 import 'package:analyzer/dart/element/element.dart';
+import 'package:ansi_styles/extension.dart';
 import 'package:build/build.dart';
 import 'package:build/src/builder/build_step.dart';
 import 'package:filterable_annotation/filterable_annotation.dart';
@@ -10,17 +11,56 @@ import 'package:source_gen/source_gen.dart';
 
 /// Generates a `*.filterable.dart` file for each annotated class.
 class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
+  _FilterData? _getFilterDataFromFilterName(
+    String newFilterName,
+    List<_FilterData> filters,
+  ) {
+    for (final filter in filters) {
+      if (filter.filterName == newFilterName) {
+        return filter;
+      }
+    }
+
+    return null;
+  }
+
+  String _codeAnsi(String value) => value.bold.italic.underline;
+
+  String _getExistingFilterNameErrorMessage(
+    _FilterData filter,
+    String filterDartType,
+    String filterName,
+  ) =>
+      '(${_codeAnsi("${filter.fieldType} ${filter.fieldName}")}) '
+      'Cannot create ${_codeAnsi("$filterDartType $filterName")} because '
+      'already exists the variable '
+      '${_codeAnsi("${filter.filterDartType} ${filter.filterName}")}. '
+      'Please, provide another name for $filterDartType or remove it.';
+
+  String _getFilterDartType(String currentFilterDartType) {
+    return currentFilterDartType
+        .replaceAll('<', 'Of')
+        .replaceAll('>', '')
+        .replaceAll(',', 'And')
+        .replaceAll(' ', '');
+  }
+
   @override
   String generateForAnnotatedElement(
     Element element,
     ConstantReader annotation,
     BuildStep buildStep,
   ) {
+    final generateSafeFilter =
+        annotation.objectValue.getField('generateSafeFilter')!.toBoolValue()!;
     final generateFields =
         annotation.objectValue.getField('generateFields')!.toBoolValue()!;
     final generateGetValueFromFieldsExtension = annotation.objectValue
         .getField('generateGetValueFromFieldsExtension')!
         .toBoolValue()!;
+    final customFilterTypeSuffix = annotation.objectValue
+        .getField('customFilterTypeSuffix')!
+        .toStringValue()!;
 
     if (!generateFields && generateGetValueFromFieldsExtension) {
       throw StateError(
@@ -36,39 +76,57 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     final classData = visitor.classData;
 
     // Check Validity
+    late final List<FieldData> classFields;
     if (classData.fields == null || classData.fields!.isEmpty) {
-      throw StateError('Cannot generate a filter with no fields');
+      // Try with constructorFields
+      if (classData.constructorFields == null ||
+          classData.constructorFields!.isEmpty) {
+        throw StateError('Cannot generate a filter with no fields');
+      } else {
+        classFields = classData.constructorFields!;
+      }
+    } else {
+      classFields = classData.fields!;
     }
 
-    final classFields = classData.fields!;
-
-    // Make sure there are not duplicate annotations:
     for (final fieldData in classFields) {
-      if (fieldData.rangeFilters.length > 1) {
-        throw StateError(
-            '(${fieldData.name}) A field must constain only 1 annotation from:'
-            ' @RangeFilter');
-      }
-      if (fieldData.valueFilters.length > 1) {
-        throw StateError(
-            '(${fieldData.name}) A field must constain only 1 annotation from:'
-            ' @ValueFilter');
+      if (fieldData.ignoreAnnotations.isNotEmpty) {
+        if (fieldData.ignoreAnnotations.length >= 2) {
+          throw StateError(
+            '(${_codeAnsi("${fieldData.type} ${fieldData.name}")}) '
+            'Cannot have more than one [Ignore] annotation. '
+            'Please, remove the unnecessary annotation.',
+          );
+        }
+        if ([
+          ...fieldData.rangeFilters,
+          ...fieldData.valueFilters,
+          ...fieldData.customFilters,
+        ].isNotEmpty) {
+          throw StateError(
+            '(${_codeAnsi("${fieldData.type} ${fieldData.name}")}) '
+            'Cannot have both [Ignore] and [RangeFilter], [ValueFilter] '
+            'or [CustomFilter]. '
+            'Please, remove the [Ignore] annotation or the other ones.',
+          );
+        }
       }
     }
 
     // Create a list of all filters
     final filters = <_FilterData>[];
     for (final fieldData in classFields) {
-      final rangeFilter = fieldData.rangeFilters.firstOrNull;
-      final valueFilter = fieldData.valueFilters.firstOrNull;
+      if (fieldData.ignoreAnnotations.firstOrNull != null) {
+        continue;
+      }
 
       var hasAddedFilter = false;
 
       // Remove Nullability from Type
       // String? -> String (=> String?Filter -> StringFilter)
-      final fieldTypeWithoutNullability = fieldData.type!.replaceFirst('?', '');
+      final fieldTypeWithoutNullability = fieldData.type.replaceFirst('?', '');
       late bool isNullable;
-      if (fieldTypeWithoutNullability != fieldData.type!) {
+      if (fieldTypeWithoutNullability != fieldData.type) {
         isNullable = true;
       } else {
         isNullable = false;
@@ -77,20 +135,83 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       // Make field's type with first letter in upper case
       // int -> Int (=> intFilter -> IntFilter)
       final baseFilterDartType = fieldTypeWithoutNullability.replaceFirst(
-        fieldData.type![0],
-        fieldData.type![0].toUpperCase(),
+        fieldData.type[0],
+        fieldData.type[0].toUpperCase(),
       );
 
-      if (rangeFilter != null) {
+      for (final customFilter in fieldData.customFilters) {
+        final filterDartType = _getFilterDartType(
+          customFilter.filter ?? '$baseFilterDartType$customFilterTypeSuffix',
+        );
+        final filterName = customFilter.name ?? '${fieldData.name}Filter';
+
+        final existingFilterWithSameName =
+            _getFilterDataFromFilterName(filterName, filters);
+        if (existingFilterWithSameName != null) {
+          throw StateError(
+            _getExistingFilterNameErrorMessage(
+              existingFilterWithSameName,
+              filterDartType,
+              filterName,
+            ),
+          );
+        }
+
+        filters.add(
+          _CustomFilterData(
+            customFilter: customFilter,
+            fieldType: fieldData.type,
+            fieldName: fieldData.name,
+            fieldKey: fieldData.fieldKey,
+            filterName: filterName,
+            filterDartType: filterDartType,
+          ),
+        );
+        hasAddedFilter = true;
+      }
+
+      for (final rangeFilter in fieldData.rangeFilters) {
         // Create a var with fieldData.name! with the first letter in upper case
-        final fieldNameWithFirstLetterUpperCase = fieldData.name!
-            .replaceFirst(fieldData.name![0], fieldData.name![0].toUpperCase());
+        final fieldNameWithFirstLetterUpperCase = fieldData.name
+            .replaceFirst(fieldData.name[0], fieldData.name[0].toUpperCase());
+
+        var minParameterName = 'min$fieldNameWithFirstLetterUpperCase';
+        var maxParameterName = 'max$fieldNameWithFirstLetterUpperCase';
+
+        final filterDartType =
+            _getFilterDartType('${baseFilterDartType}RangeFilter');
+        late final String filterName;
+        if (rangeFilter.name == null) {
+          filterName = '${fieldData.name}RangeFilter';
+        } else {
+          filterName = rangeFilter.name!;
+
+          // Update Parameters Name to avoid collisions
+          final fixedName = filterName.replaceFirst(
+            filterName[0],
+            filterName[0].toUpperCase(),
+          );
+          minParameterName = '${minParameterName}Of$fixedName';
+          maxParameterName = '${maxParameterName}Of$fixedName';
+        }
+
+        final existingFilterWithSameName =
+            _getFilterDataFromFilterName(filterName, filters);
+        if (existingFilterWithSameName != null) {
+          throw StateError(
+            _getExistingFilterNameErrorMessage(
+              existingFilterWithSameName,
+              filterDartType,
+              filterName,
+            ),
+          );
+        }
 
         filters.add(
           _RangeFilterData(
             rangeFilter: rangeFilter,
-            fieldType: fieldData.type!,
-            fieldName: fieldData.name!,
+            fieldType: fieldData.type,
+            fieldName: fieldData.name,
             fieldKey: fieldData.fieldKey,
             // RangeFilter has 2 parameters: min and max
             // they should be nullable
@@ -98,20 +219,18 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
               // Add Nullability to Type
               baseType: fieldTypeWithoutNullability,
               isNullable: true,
-              name: 'min$fieldNameWithFirstLetterUpperCase',
+              name: minParameterName,
               fieldName: 'min',
-              defaultValue: rangeFilter.defaultMin,
             ),
             maxFilterParameter: _FilterParameter(
               // Add Nullability to Type
               baseType: fieldTypeWithoutNullability,
               isNullable: true,
-              name: 'max$fieldNameWithFirstLetterUpperCase',
+              name: maxParameterName,
               fieldName: 'max',
-              defaultValue: rangeFilter.defaultMax,
             ),
-            filterName: '${fieldData.name!}RangeFilter',
-            filterDartType: '${baseFilterDartType}RangeFilter',
+            filterName: filterName,
+            filterDartType: filterDartType,
           ),
         );
         hasAddedFilter = true;
@@ -119,22 +238,59 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
       // If no filter is provided (or only a ValueFilter) defaults
       // to [ValueFilter]
-      if (!hasAddedFilter || valueFilter != null) {
+      late final List<ValueFilter> fixedValueFilters;
+      if (!hasAddedFilter && fieldData.valueFilters.isEmpty) {
+        fixedValueFilters = [const ValueFilter()];
+      } else {
+        fixedValueFilters = fieldData.valueFilters;
+      }
+      for (final valueFilter in fixedValueFilters) {
+        final filterDartType = _getFilterDartType(
+          '${baseFilterDartType}Filter',
+        );
+
+        var parameterName = fieldData.name;
+
+        late final String filterName;
+        if (valueFilter.name == null) {
+          filterName = '${fieldData.name}Filter';
+        } else {
+          filterName = valueFilter.name!;
+
+          // Update Parameters Name to avoid collisions
+          final fixedName = filterName.replaceFirst(
+            filterName[0],
+            filterName[0].toUpperCase(),
+          );
+          parameterName = '${parameterName}Of$fixedName';
+        }
+
+        final existingFilterWithSameName =
+            _getFilterDataFromFilterName(filterName, filters);
+        if (existingFilterWithSameName != null) {
+          throw StateError(
+            _getExistingFilterNameErrorMessage(
+              existingFilterWithSameName,
+              filterDartType,
+              filterName,
+            ),
+          );
+        }
+
         filters.add(
           _ValueFilterData(
-            valueFilter: valueFilter ?? const ValueFilter(),
-            fieldType: fieldData.type!,
-            fieldName: fieldData.name!,
+            valueFilter: valueFilter,
+            fieldType: fieldData.type,
+            fieldName: fieldData.name,
             fieldKey: fieldData.fieldKey,
             filterParameter: _FilterParameter(
               baseType: fieldTypeWithoutNullability,
               isNullable: isNullable,
-              name: fieldData.name!,
+              name: fieldData.name,
               fieldName: 'value',
-              defaultValue: valueFilter?.defaultValue,
             ),
-            filterName: '${fieldData.name!}Filter',
-            filterDartType: '${baseFilterDartType}Filter',
+            filterName: filterName,
+            filterDartType: filterDartType,
           ),
         );
         hasAddedFilter = true;
@@ -147,32 +303,29 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     // Class Start
     final generatedClassName = '${classData.name}Filterable';
     final generatedEnumName = '${classData.name}Field';
-    buffer.writeln('/// Filter of ${element.name}');
+    final generatedAdaptersName = '${classData.name}Adapters';
+    buffer.writeln('/// {@template ${element.name}}');
+    buffer.writeln("/// [${element.name}]'s [Filterable]");
+    buffer.writeln('/// {@endtemplate}');
     buffer.writeln('class $generatedClassName extends Filterable {');
 
     // Constructor Parameters Start
+    buffer.writeln('/// {@macro ${element.name}}');
     buffer.writeln('$generatedClassName({');
 
     // Constructor Parameters Fields
     for (final filter in filters) {
-      for (final parameter in filter.getFilterParameters()) {
-        // Include Defaults in Constructor
-        // Its true only if the filter has a default value
-        late bool includeDefaultsInConstructor;
-        switch (filter.filterType) {
-          case final ValueFilter valueFilter:
-            includeDefaultsInConstructor =
-                valueFilter.includeDefaultsInConstructor;
-          case final RangeFilter rangeFilter:
-            includeDefaultsInConstructor =
-                rangeFilter.includeDefaultsInConstructor;
-        }
-        if (includeDefaultsInConstructor && parameter.defaultValue != null) {
-          buffer.writeln(
-            // ignore: lines_longer_than_80_chars
-            '${parameter.fullType} ${parameter.name} = ${parameter.getDefaultNameForParameter()!},',
-          );
-        } else {
+      buffer.writeln(
+        '/// Parameters used by ${filter.filterName} to filter [${classData.name}]s',
+      );
+      final filterParameters = filter.getFilterParameters();
+      if (filterParameters == null) {
+        // ignore: lines_longer_than_80_chars
+        buffer.writeln(
+          'required ${filter.filterDartType} ${filter.filterName},',
+        );
+      } else {
+        for (final parameter in filterParameters) {
           buffer.writeln(
             'required ${parameter.fullType} ${parameter.name},',
           );
@@ -189,12 +342,18 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       final filter = filters[i];
 
       // Type Filter Start
-      buffer.writeln('${filter.filterName} = ${filter.filterDartType}');
-      buffer.writeln('(');
-      for (final parameter in filter.getFilterParameters()) {
-        buffer.writeln('${parameter.name},');
+      buffer.writeln('${filter.filterName} =');
+      final filterParameters = filter.getFilterParameters();
+      if (filterParameters == null) {
+        buffer.writeln(filter.filterName);
+      } else {
+        buffer.writeln(filter.filterDartType);
+        buffer.writeln('(');
+        for (final parameter in filterParameters) {
+          buffer.writeln('${parameter.name},');
+        }
+        buffer.writeln(')');
       }
-      buffer.writeln(')');
 
       // Line Terminator
       if (i == filters.length - 1) {
@@ -208,64 +367,11 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     buffer.writeln();
 
-    // Constructor.initial Parameters Start
-    buffer.writeln('$generatedClassName.withDefaults(');
-
-    // Constructor.initial Parameters Fields
-    // ParameterName, DefaultValue
-    final parametersWithDefaultValue = <String, _FilterParameter>{};
-    final parametersWithoutDefaultValue = <_FilterParameter>[];
-    // var allFieldsHaveDefaultValue = true;
-    // Fill data
-    for (final filter in filters) {
-      for (final parameter in filter.getFilterParameters()) {
-        if (parameter.defaultValue != null) {
-          parametersWithDefaultValue[parameter.name] = parameter;
-        } else {
-          parametersWithoutDefaultValue.add(parameter);
-        }
-      }
-    }
-
-    if (parametersWithoutDefaultValue.isNotEmpty) {
-      buffer.writeln('{');
-
-      for (final parameter in parametersWithoutDefaultValue) {
-        buffer.writeln(
-          'required ${parameter.fullType} ${parameter.name},',
-        );
-      }
-
-      buffer.writeln('}');
-    }
-
-    // Constructor.initial Parameters End
-    buffer.writeln(')');
-
-    // Constructor.initial Body Start
-    buffer.writeln(': this(');
-
-    //
-    buffer.writeln('/// Default Values');
-    for (final entry in parametersWithDefaultValue.entries) {
-      final parameter = entry.value;
-      final defaultValueVarName = parameter.getDefaultNameForParameter()!;
-      buffer.writeln('${entry.key}: $defaultValueVarName,');
-    }
-
-    //
-    buffer.writeln('/// Non-Default Values');
-    for (final parameter in parametersWithoutDefaultValue) {
-      buffer.writeln('${parameter.name}: ${parameter.name},');
-    }
-
-    // Constructor.initial Body End
-    buffer.writeln(');');
-
-    buffer.writeln();
-
     // Filters Declaration
     for (final filter in filters) {
+      buffer.writeln(
+        "/// The filter for [${classData.name}]'s ${filter.fieldName}",
+      );
       buffer.writeln('final ${filter.filterDartType} ${filter.filterName};');
       buffer.writeln();
     }
@@ -274,6 +380,47 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     buffer.writeln('@override');
     buffer.writeln('List<FilterableField> get filters => [');
 
+    // Get only the fields that are not ignored
+    final fieldsToGenerate = <FieldData>[];
+    for (final fieldData in classFields) {
+      final maybeIgnore = fieldData.ignoreAnnotations.firstOrNull;
+
+      if (maybeIgnore == null || !maybeIgnore.ignoreField) {
+        fieldsToGenerate.add(fieldData);
+      }
+    }
+
+    // Determine the name of the field that will be used as an identifier
+    late final String enumIdentifierFieldName;
+    final idNameOptions = <String>[
+      'id',
+      'identifier',
+      'key',
+      'fieldId',
+      'fieldIndentifier',
+      'fieldKey',
+    ];
+
+    var hasFindedId = false;
+    for (final idName in idNameOptions) {
+      if (!fieldsToGenerate.any((field) => field.name == idName)) {
+        enumIdentifierFieldName = idName;
+        hasFindedId = true;
+        break;
+      }
+    }
+    if (!hasFindedId) {
+      var i = 0;
+      while (!hasFindedId) {
+        i++;
+        final sequenceId = 'id$i';
+        if (!fieldsToGenerate.any((field) => field.name == sequenceId)) {
+          enumIdentifierFieldName = sequenceId;
+          hasFindedId = true;
+        }
+      }
+    }
+
     //
     for (final filter in filters) {
       // FilterableField Start
@@ -281,7 +428,10 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
       // FieldId
       if (generateFields) {
-        buffer.writeln('fieldId: $generatedEnumName.${filter.fieldName}.id,');
+        buffer.writeln(
+          // ignore: lines_longer_than_80_chars
+          'fieldId: $generatedEnumName.${filter.fieldName}.$enumIdentifierFieldName,',
+        );
       } else {
         buffer.writeln("fieldId: '${filter.fieldKey}',");
       }
@@ -298,18 +448,52 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     buffer.writeln();
 
+    // SafeFilter Function Start
+    if (generateSafeFilter) {
+      buffer.writeln('''
+      /// A wrapper around [$generatedClassName].[filter].
+      /// The only difference is that [safeFilter]
+      /// require to pass all the necessary adapters in
+      /// order to correctly filter the Object.
+      /// 
+      /// This totally* excludes runtime errors.
+      /// 
+      /// (*) This is not 100% true, because it depends on
+      /// your implementation of the adapters.      
+      T safeFilter<T>(
+        T data, {
+        bool descending = false,
+        required List<String> fieldPath,
+        required $generatedAdaptersName<T> adapterGroup,
+      }) =>
+          super.filter(
+            data,
+            fieldPath: fieldPath,
+            descending: descending,
+            adapters: adapterGroup.adapters,
+          );
+      ''');
+    }
+
     // CopyWith Parameters Start
+    buffer.writeln('/// Creates a copy of [$generatedClassName] with');
+    buffer.writeln('/// the specified fields replaced with the new values.');
     buffer.writeln('$generatedClassName copyWith({');
 
     //
     for (final filter in filters) {
-      for (final parameter in filter.getFilterParameters()) {
-        // If the parameter is nullable, it should be wrapped in a Function
-        // to be able to use the null-aware operator
-        final maybeFunction = parameter.isNullable ? 'Function()?' : '';
-        buffer.writeln(
-          '${parameter.baseType}? $maybeFunction ${parameter.name},',
-        );
+      final filterParameters = filter.getFilterParameters();
+      if (filterParameters == null) {
+        buffer.writeln('${filter.filterDartType}? ${filter.filterName},');
+      } else {
+        for (final parameter in filterParameters) {
+          // If the parameter is nullable, it should be wrapped in a Function
+          // to be able to use the null-aware operator
+          final maybeFunction = parameter.isNullable ? 'Function()?' : '';
+          buffer.writeln(
+            '${parameter.baseType}? $maybeFunction ${parameter.name},',
+          );
+        }
       }
     }
 
@@ -321,33 +505,45 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     //
     for (final filter in filters) {
-      for (final parameter in filter.getFilterParameters()) {
-        // If the parameter is nullable, it should be wrapped in a Function
-        // to be able to use the null-aware operator
-        if (parameter.isNullable) {
-          buffer.writeln('${parameter.name}: ${parameter.name}');
-          buffer.writeln(' != null ');
-          buffer.writeln(' ? ');
-          buffer.writeln('${parameter.name}()');
-          buffer.writeln(' : ');
-          buffer.writeln('${filter.filterName}.${parameter.fieldName},');
-        } else {
-          // ignore: lines_longer_than_80_chars
-          final fallBackString =
-              '(${filter.filterName}.${parameter.fieldName})!';
-          buffer.writeln('/// It is used $fallBackString because');
-          buffer.writeln(
-            '/// [${filter.filterName}.${parameter.fieldName}] corresponds to [${parameter.name}] ',
-          );
-          buffer.writeln(
-            '/// which is managed exclusively by [$generatedClassName]',
-          );
-          buffer.writeln(
-            '/// and, as requested by the constructor, it cannot be null',
-          );
-          buffer.writeln('${parameter.name}: ${parameter.name}');
-          buffer.writeln(' ?? ');
-          buffer.writeln('$fallBackString,');
+      final filterParameters = filter.getFilterParameters();
+      if (filterParameters == null) {
+        // ignore: lines_longer_than_80_chars
+        // buffer.writeln(
+        //   'required ${filter.filterDartType} ${filter.filterName},',
+        // );
+        buffer.writeln('${filter.filterName}: ${filter.filterName}');
+        buffer.writeln(' ?? ');
+        buffer.writeln('this.${filter.filterName},');
+      } else {
+        for (final parameter in filterParameters) {
+          // If the parameter is nullable, it should be wrapped in a Function
+          // to be able to use the null-aware operator
+          if (parameter.isNullable) {
+            buffer.writeln('${parameter.name}: ${parameter.name}');
+            buffer.writeln(' != null ');
+            buffer.writeln(' ? ');
+            buffer.writeln('${parameter.name}()');
+            buffer.writeln(' : ');
+            buffer.writeln('${filter.filterName}.${parameter.fieldName}');
+          } else {
+            // ignore: lines_longer_than_80_chars
+            final fallBackString =
+                '(${filter.filterName}.${parameter.fieldName})!';
+            buffer.writeln('/// It is used $fallBackString because');
+            buffer.writeln(
+              '/// [${filter.filterName}.${parameter.fieldName}] corresponds to [${parameter.name}] ',
+            );
+            buffer.writeln(
+              '/// which is managed exclusively by [$generatedClassName]',
+            );
+            buffer.writeln(
+              '/// and, as requested by the constructor, it cannot be null',
+            );
+            buffer.writeln('${parameter.name}: ${parameter.name}');
+            buffer.writeln(' ?? ');
+            buffer.writeln(fallBackString);
+          }
+          buffer.writeln(',');
         }
       }
     }
@@ -357,38 +553,84 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     buffer.writeln();
 
-    // Defaults Fields Start
-    for (final filter in filters) {
-      for (final parameter in filter.getFilterParameters()) {
-        buffer.writeln(
-          '/// Default Values for ${parameter.name}',
-        );
-        final defaultValue = parameter.defaultValue;
-        if (defaultValue != null) {
-          final parameterNameWithFirstLetterUpperCase = parameter.name
-              .replaceFirst(parameter.name[0], parameter.name[0].toUpperCase());
-
-          buffer.writeln(
-            // ignore: lines_longer_than_80_chars
-            'static const ${parameter.fullType} ${parameter.getDefaultNameForParameter()!} = $defaultValue;',
-          );
-          buffer.writeln(
-            'bool get is${parameterNameWithFirstLetterUpperCase}Default =>',
-          );
-          buffer.writeln(
-            // ignore: lines_longer_than_80_chars
-            '${filter.filterName}.${parameter.fieldName} == ${parameter.getDefaultNameForParameter()!};',
-          );
-        } else {
-          buffer.writeln('/// No default value requested');
-        }
-        buffer.writeln();
-      }
-      buffer.writeln();
-    }
-
     // Class End
     buffer.writeln('}');
+
+    // AdapterGroup Generator
+    if (generateSafeFilter) {
+      // AdapterGroup Start
+      buffer.writeln('/// {@template $generatedAdaptersName}');
+      buffer.writeln("/// [${element.name}]'s [FilterAdapterGroup].");
+      buffer.writeln('/// Used to generate the safeFilter function.');
+      buffer.writeln('/// {@endtemplate}');
+      // ignore: lines_longer_than_80_chars
+      buffer.writeln(
+        'class $generatedAdaptersName<T> extends FilterAdapterGroup<T> {',
+      );
+
+      //
+      // Make it a set of <String,String>
+      final allUniqueRequestedFilterData = filters.map(
+        (filter) {
+          final filterDartType = filter.filterDartType;
+          final adapterOfFilterName =
+              // ignore: lines_longer_than_80_chars
+              '${filterDartType.replaceFirst(filterDartType[0], filterDartType[0].toLowerCase())}Adapter';
+
+          return (
+            filterDartType: filterDartType,
+            adapterOfFilterName: adapterOfFilterName,
+          );
+        },
+      ).toSet();
+
+      // AdapterGroup Constructor Start
+      buffer.writeln('/// {@macro $generatedAdaptersName}');
+      buffer.writeln('$generatedAdaptersName({');
+
+      //
+      for (final filterData in allUniqueRequestedFilterData) {
+        final adapterOfFilterName = filterData.adapterOfFilterName;
+
+        buffer.writeln(
+          // ignore: lines_longer_than_80_chars
+          'required this.$adapterOfFilterName,',
+        );
+      }
+
+      // AdapterGroup Constructor End
+      buffer.writeln('})');
+
+      // AdapterGroup Constructor Body Start
+      buffer.writeln(': super([');
+
+      //
+      for (final filterData in allUniqueRequestedFilterData) {
+        buffer.writeln('${filterData.adapterOfFilterName},');
+      }
+
+      // AdapterGroup Constructor Body End
+      buffer.writeln(']);');
+
+      buffer.writeln();
+
+      // AdapterGroup Fields
+      for (final filterData in allUniqueRequestedFilterData) {
+        final filterDartType = filterData.filterDartType;
+        final adapterOfFilterName = filterData.adapterOfFilterName;
+
+        buffer.writeln(
+          "/// [$filterDartType]'s [FilterAdapter]",
+        );
+        buffer.writeln(
+          'final FilterAdapter<T, $filterDartType> $adapterOfFilterName;',
+        );
+        buffer.writeln();
+      }
+
+      // AdapterGroup End
+      buffer.writeln('}');
+    }
 
     // Fields Generator
     if (!generateFields) {
@@ -404,14 +646,14 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     buffer.writeln('enum $generatedEnumName {');
 
     // enum fields
-    for (var i = 0; i < classFields.length; i++) {
-      final fieldData = classFields[i];
+    for (var i = 0; i < fieldsToGenerate.length; i++) {
+      final fieldData = fieldsToGenerate[i];
       buffer.writeln('/// The ${fieldData.name} of [${classData.name}]');
       buffer.writeln(
         "${fieldData.name}('${fieldData.fieldKey?.key ?? fieldData.name}')",
       );
       // Line Terminator
-      if (i == classFields.length - 1) {
+      if (i == fieldsToGenerate.length - 1) {
         buffer.writeln(';');
       } else {
         buffer.writeln(',');
@@ -421,11 +663,11 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     }
 
     // enum Constructor
-    buffer.writeln('const $generatedEnumName(this.id);');
+    buffer.writeln('const $generatedEnumName(this.$enumIdentifierFieldName);');
 
     // enum Custom Fields
-    // id
-    buffer.writeln('final String id;');
+    buffer.writeln('/// The identifier of the field');
+    buffer.writeln('final String $enumIdentifierFieldName;');
 
     // enum End
     buffer.writeln('}');
@@ -441,7 +683,10 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     buffer.writeln('/// Extension on [${classData.name}] that adds:');
     buffer.writeln('/// - [getValueFromField]');
     buffer.writeln('/// - [getAllValuesFromFields]');
-    buffer.writeln('extension GetValueFromFields on ${classData.name} {');
+    // ignore: lines_longer_than_80_chars
+    buffer.writeln(
+      'extension ${classData.name}GetValueFromFields on ${classData.name} {',
+    );
 
     // getValueFromField Start
     buffer
@@ -453,7 +698,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     buffer.writeln('switch (field) {');
 
     //
-    for (final fieldData in classFields) {
+    for (final fieldData in fieldsToGenerate) {
       buffer.writeln('case $generatedEnumName.${fieldData.name}:');
       buffer.writeln('return ${fieldData.name};');
     }
@@ -507,7 +752,7 @@ sealed class _FilterData {
   final String filterName;
   final String filterDartType;
 
-  List<_FilterParameter> getFilterParameters();
+  List<_FilterParameter>? getFilterParameters();
 }
 
 class _FilterParameter {
@@ -516,7 +761,6 @@ class _FilterParameter {
     required this.baseType,
     required this.isNullable,
     required this.fieldName,
-    required this.defaultValue,
   });
 
   /// The name of the parameter
@@ -533,24 +777,23 @@ class _FilterParameter {
   /// 'min' or 'max'
   final String fieldName;
 
-  /// The default value for the parameter
-  final String? defaultValue;
-
   String get fullType => isNullable ? '$baseType?' : baseType;
+}
 
-  /// Returns the default name for the parameter
-  ///
-  /// Can return null if default value is null
-  String? getDefaultNameForParameter() {
-    if (defaultValue == null) {
-      return null;
-    }
+class _CustomFilterData extends _FilterData {
+  _CustomFilterData({
+    required CustomFilter customFilter,
+    required super.fieldType,
+    required super.fieldName,
+    required super.fieldKey,
+    required super.filterName,
+    required super.filterDartType,
+  }) : super(
+          filterType: customFilter,
+        );
 
-    final parameterNameWithFirstLetterUpperCase =
-        name.replaceFirst(name[0], name[0].toUpperCase());
-
-    return 'default$parameterNameWithFirstLetterUpperCase';
-  }
+  @override
+  List<_FilterParameter>? getFilterParameters() => null;
 }
 
 class _ValueFilterData extends _FilterData {

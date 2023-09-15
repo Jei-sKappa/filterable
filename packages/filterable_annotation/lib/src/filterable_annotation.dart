@@ -5,9 +5,23 @@ import 'package:meta/meta_meta.dart';
 class FilterableGen {
   /// Default constructor
   const FilterableGen({
+    this.generateSafeFilter = true,
     this.generateFields = false,
     this.generateGetValueFromFieldsExtension = false,
+    this.customFilterTypeSuffix = 'Filter',
   });
+  /// Whether to generate the safe filter or not.
+  /// 
+  /// The `safeFilter` is a function that calls the
+  /// default `filter` function. The main difference
+  /// is that the `safeFilter` require to pass all the
+  /// necessary adapters to correctly filter the Object.
+  /// 
+  /// This totally* excludes runtime errors.
+  /// 
+  /// (*) This is not 100% true, because it depends on
+  /// the users' implementation of the adapters.
+  final bool generateSafeFilter;
 
   /// Whether to generate the fields or not
   final bool generateFields;
@@ -17,6 +31,20 @@ class FilterableGen {
   /// If you want to generate the extension
   /// `generateFields` must be `true
   final bool generateGetValueFromFieldsExtension;
+
+
+  /// The suffix to use when defining the type
+  /// of a CustomFilter when `filter==null`
+  /// 
+  /// Defaults to: 'Filter'
+  /// 
+  /// Example:
+  /// ```dart
+  /// @CustomFilter()
+  /// // Will generate a filter of type: 'MyClass<customFilterSuffix>'
+  /// final MyClass myString;
+  /// ```
+  final String customFilterTypeSuffix;
 }
 
 /// Annotation to mark a class as filterable

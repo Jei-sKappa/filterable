@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-// ignore_for_file: lines_longer_than_80_chars, unnecessary_nullable_for_final_variable_declarations, always_put_required_named_parameters_first
+// ignore_for_file: lines_longer_than_80_chars, unnecessary_nullable_for_final_variable_declarations, always_put_required_named_parameters_first, prefer_initializing_formals
 
 part of 'person.dart';
 
@@ -11,17 +11,41 @@ part of 'person.dart';
 /// Filter of Person
 class PersonFilterable extends Filterable {
   PersonFilterable({
+    /// Parameters used by nameFilter to filter [Person]s
     required String name,
+
+    /// Parameters used by surnameFilter to filter [Person]s
     required String surname,
+
+    /// Parameters used by ageFilter to filter [Person]s
     required int age,
+
+    /// Parameters used by myCustomDateOfBirthFilter to filter [Person]s
+    required DateFilterWithoutNullability myCustomDateOfBirthFilter,
+
+    /// Parameters used by dateOfBirthRangeFilter to filter [Person]s
     required DateTime? minDateOfBirth,
     required DateTime? maxDateOfBirth,
+
+    /// Parameters used by dateOfBirthFilter to filter [Person]s
     required DateTime dateOfBirth,
-    required String favoriteColor,
-    String description = defaultDescription,
-    int? minRanking = defaultMinRanking,
-    int? maxRanking = defaultMaxRanking,
+
+    /// Parameters used by rankingRangeFilter to filter [Person]s
+    required int? minRanking,
+    required int? maxRanking,
+
+    /// Parameters used by otherRankingFilter to filter [Person]s
+    required int? minRankingOfOtherRankingFilter,
+    required int? maxRankingOfOtherRankingFilter,
+
+    /// Parameters used by nicknameFilter to filter [Person]s
     required String? nickname,
+
+    /// Parameters used by filterWithStrangeNameFilter to filter [Person]s
+    required StringStrangeSuffixFilter filterWithStrangeNameFilter,
+
+    /// Parameters used by myClassFilter to filter [Person]s
+    required MyClassFilterable myClassFilter,
   })  : nameFilter = StringFilter(
           name,
         ),
@@ -31,6 +55,7 @@ class PersonFilterable extends Filterable {
         ageFilter = IntFilter(
           age,
         ),
+        myCustomDateOfBirthFilter = myCustomDateOfBirthFilter,
         dateOfBirthRangeFilter = DateTimeRangeFilter(
           minDateOfBirth,
           maxDateOfBirth,
@@ -38,44 +63,19 @@ class PersonFilterable extends Filterable {
         dateOfBirthFilter = DateTimeFilter(
           dateOfBirth,
         ),
-        favoriteColorFilter = StringFilter(
-          favoriteColor,
-        ),
-        descriptionFilter = StringFilter(
-          description,
-        ),
         rankingRangeFilter = IntRangeFilter(
           minRanking,
           maxRanking,
         ),
+        otherRankingFilter = IntRangeFilter(
+          minRankingOfOtherRankingFilter,
+          maxRankingOfOtherRankingFilter,
+        ),
         nicknameFilter = StringFilter(
           nickname,
-        );
-
-  PersonFilterable.withDefaults({
-    required String name,
-    required String surname,
-    required int age,
-    required DateTime? minDateOfBirth,
-    required DateTime? maxDateOfBirth,
-    required DateTime dateOfBirth,
-    required String? nickname,
-  }) : this(
-          /// Default Values
-          favoriteColor: defaultFavoriteColor,
-          description: defaultDescription,
-          minRanking: defaultMinRanking,
-          maxRanking: defaultMaxRanking,
-
-          /// Non-Default Values
-          name: name,
-          surname: surname,
-          age: age,
-          minDateOfBirth: minDateOfBirth,
-          maxDateOfBirth: maxDateOfBirth,
-          dateOfBirth: dateOfBirth,
-          nickname: nickname,
-        );
+        ),
+        filterWithStrangeNameFilter = filterWithStrangeNameFilter,
+        myClassFilter = myClassFilter;
 
   final StringFilter nameFilter;
 
@@ -83,17 +83,21 @@ class PersonFilterable extends Filterable {
 
   final IntFilter ageFilter;
 
+  final DateFilterWithoutNullability myCustomDateOfBirthFilter;
+
   final DateTimeRangeFilter dateOfBirthRangeFilter;
 
   final DateTimeFilter dateOfBirthFilter;
 
-  final StringFilter favoriteColorFilter;
-
-  final StringFilter descriptionFilter;
-
   final IntRangeFilter rankingRangeFilter;
 
+  final IntRangeFilter otherRankingFilter;
+
   final StringFilter nicknameFilter;
+
+  final StringStrangeSuffixFilter filterWithStrangeNameFilter;
+
+  final MyClassFilterable myClassFilter;
 
   @override
   List<FilterableField> get filters => [
@@ -111,6 +115,10 @@ class PersonFilterable extends Filterable {
         ),
         FilterableField(
           fieldId: PersonField.dateOfBirth.id,
+          typeFilterable: myCustomDateOfBirthFilter,
+        ),
+        FilterableField(
+          fieldId: PersonField.dateOfBirth.id,
           typeFilterable: dateOfBirthRangeFilter,
         ),
         FilterableField(
@@ -118,20 +126,24 @@ class PersonFilterable extends Filterable {
           typeFilterable: dateOfBirthFilter,
         ),
         FilterableField(
-          fieldId: PersonField.favoriteColor.id,
-          typeFilterable: favoriteColorFilter,
-        ),
-        FilterableField(
-          fieldId: PersonField.description.id,
-          typeFilterable: descriptionFilter,
-        ),
-        FilterableField(
           fieldId: PersonField.ranking.id,
           typeFilterable: rankingRangeFilter,
         ),
         FilterableField(
+          fieldId: PersonField.ranking.id,
+          typeFilterable: otherRankingFilter,
+        ),
+        FilterableField(
           fieldId: PersonField.nickname.id,
           typeFilterable: nicknameFilter,
+        ),
+        FilterableField(
+          fieldId: PersonField.filterWithStrangeName.id,
+          typeFilterable: filterWithStrangeNameFilter,
+        ),
+        FilterableField(
+          fieldId: PersonField.myClass.id,
+          typeFilterable: myClassFilter,
         ),
       ];
 
@@ -139,14 +151,17 @@ class PersonFilterable extends Filterable {
     String? name,
     String? surname,
     int? age,
+    DateFilterWithoutNullability? myCustomDateOfBirthFilter,
     DateTime? Function()? minDateOfBirth,
     DateTime? Function()? maxDateOfBirth,
     DateTime? dateOfBirth,
-    String? favoriteColor,
-    String? description,
     int? Function()? minRanking,
     int? Function()? maxRanking,
+    int? Function()? minRankingOfOtherRankingFilter,
+    int? Function()? maxRankingOfOtherRankingFilter,
     String? Function()? nickname,
+    StringStrangeSuffixFilter? filterWithStrangeNameFilter,
+    MyClassFilterable? myClassFilter,
   }) =>
       PersonFilterable(
         /// It is used (nameFilter.value)! because
@@ -166,6 +181,8 @@ class PersonFilterable extends Filterable {
         /// which is managed exclusively by [PersonFilterable]
         /// and, as requested by the constructor, it cannot be null
         age: age ?? (ageFilter.value)!,
+        myCustomDateOfBirthFilter:
+            myCustomDateOfBirthFilter ?? this.myCustomDateOfBirthFilter,
         minDateOfBirth: minDateOfBirth != null
             ? minDateOfBirth()
             : dateOfBirthRangeFilter.min,
@@ -178,61 +195,19 @@ class PersonFilterable extends Filterable {
         /// which is managed exclusively by [PersonFilterable]
         /// and, as requested by the constructor, it cannot be null
         dateOfBirth: dateOfBirth ?? (dateOfBirthFilter.value)!,
-
-        /// It is used (favoriteColorFilter.value)! because
-        /// [favoriteColorFilter.value] corresponds to [favoriteColor]
-        /// which is managed exclusively by [PersonFilterable]
-        /// and, as requested by the constructor, it cannot be null
-        favoriteColor: favoriteColor ?? (favoriteColorFilter.value)!,
-
-        /// It is used (descriptionFilter.value)! because
-        /// [descriptionFilter.value] corresponds to [description]
-        /// which is managed exclusively by [PersonFilterable]
-        /// and, as requested by the constructor, it cannot be null
-        description: description ?? (descriptionFilter.value)!,
         minRanking: minRanking != null ? minRanking() : rankingRangeFilter.min,
         maxRanking: maxRanking != null ? maxRanking() : rankingRangeFilter.max,
+        minRankingOfOtherRankingFilter: minRankingOfOtherRankingFilter != null
+            ? minRankingOfOtherRankingFilter()
+            : otherRankingFilter.min,
+        maxRankingOfOtherRankingFilter: maxRankingOfOtherRankingFilter != null
+            ? maxRankingOfOtherRankingFilter()
+            : otherRankingFilter.max,
         nickname: nickname != null ? nickname() : nicknameFilter.value,
+        filterWithStrangeNameFilter:
+            filterWithStrangeNameFilter ?? this.filterWithStrangeNameFilter,
+        myClassFilter: myClassFilter ?? this.myClassFilter,
       );
-
-  /// Default Values for name
-  /// No default value requested
-
-  /// Default Values for surname
-  /// No default value requested
-
-  /// Default Values for age
-  /// No default value requested
-
-  /// Default Values for minDateOfBirth
-  /// No default value requested
-
-  /// Default Values for maxDateOfBirth
-  /// No default value requested
-
-  /// Default Values for dateOfBirth
-  /// No default value requested
-
-  /// Default Values for favoriteColor
-  static const String defaultFavoriteColor = 'white';
-  bool get isFavoriteColorDefault =>
-      favoriteColorFilter.value == defaultFavoriteColor;
-
-  /// Default Values for description
-  static const String defaultDescription = 'You can write any dart code here';
-  bool get isDescriptionDefault =>
-      descriptionFilter.value == defaultDescription;
-
-  /// Default Values for minRanking
-  static const int? defaultMinRanking = 0;
-  bool get isMinRankingDefault => rankingRangeFilter.min == defaultMinRanking;
-
-  /// Default Values for maxRanking
-  static const int? defaultMaxRanking = 100;
-  bool get isMaxRankingDefault => rankingRangeFilter.max == defaultMaxRanking;
-
-  /// Default Values for nickname
-  /// No default value requested
 }
 
 /// Fields of Person
@@ -249,17 +224,17 @@ enum PersonField {
   /// The dateOfBirth of [Person]
   dateOfBirth('dateOfBirth'),
 
-  /// The favoriteColor of [Person]
-  favoriteColor('favoriteColor'),
-
-  /// The description of [Person]
-  description('description'),
-
   /// The ranking of [Person]
   ranking('ranking'),
 
   /// The nickname of [Person]
-  nickname('nickname');
+  nickname('nickname'),
+
+  /// The filterWithStrangeName of [Person]
+  filterWithStrangeName('filterWithStrangeName'),
+
+  /// The myClass of [Person]
+  myClass('myClass');
 
   const PersonField(this.id);
   final String id;
@@ -281,14 +256,14 @@ extension GetValueFromFields on Person {
         return age;
       case PersonField.dateOfBirth:
         return dateOfBirth;
-      case PersonField.favoriteColor:
-        return favoriteColor;
-      case PersonField.description:
-        return description;
       case PersonField.ranking:
         return ranking;
       case PersonField.nickname:
         return nickname;
+      case PersonField.filterWithStrangeName:
+        return filterWithStrangeName;
+      case PersonField.myClass:
+        return myClass;
     }
   }
 

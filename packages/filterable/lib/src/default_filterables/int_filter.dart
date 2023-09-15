@@ -1,8 +1,8 @@
-import 'package:filterable/src/type_filterables/type_filterable.dart';
+import 'package:filterable/src/value_filterable.dart';
 
 /// A [IntFilter].
 /// This allows to filter strings
-class IntFilter extends TypeFilterable<int?> {
+class IntFilter implements ValueFilterable<int?> {
   /// Creates a IntFilter
   IntFilter(
     this.value, {

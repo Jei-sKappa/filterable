@@ -1,3 +1,6 @@
+import 'package:example/domain/models/filters/date_filter_without_nullability.dart';
+import 'package:example/domain/models/filters/string_strange_suffix_filter.dart';
+import 'package:example/domain/models/my_class.dart';
 import 'package:filterable/filterable.dart';
 import 'package:filterable_annotation/filterable_annotation.dart';
 
@@ -6,6 +9,7 @@ part 'person.filterable.dart';
 @FilterableGen(
   generateFields: true,
   generateGetValueFromFieldsExtension: true,
+  customFilterTypeSuffix: 'StrangeSuffixFilter',
 )
 class Person {
   Person({
@@ -13,9 +17,9 @@ class Person {
     required this.surname,
     required this.age,
     required this.dateOfBirth,
-    required this.favoriteColor,
-    required this.description,
     required this.ranking,
+    required this.filterWithStrangeName,
+    required this.myClass,
     this.nickname,
   });
 
@@ -27,19 +31,24 @@ class Person {
   @ValueFilter()
   final int age;
 
+  @CustomFilter.named(
+    'myCustomDateOfBirthFilter',
+    filter: 'DateFilterWithoutNullability',
+  )
   @ValueFilter()
   @RangeFilter()
   final DateTime dateOfBirth;
 
-  @ValueFilter(defaultValue: "'white'", includeDefaultsInConstructor: false)
-  final String favoriteColor;
-
-  @ValueFilter(defaultValue: "'You can write any dart code here'")
-  final String description;
-
-  @RangeFilter(defaultMax: '100', defaultMin: '0')
+  @RangeFilter()
+  @RangeFilter('otherRankingFilter')
   final int? ranking;
 
   @ValueFilter()
   final String? nickname;
+
+  @CustomFilter()
+  final String filterWithStrangeName;
+
+  @CustomFilter('MyClassFilterable')
+  final MyClass myClass;
 }

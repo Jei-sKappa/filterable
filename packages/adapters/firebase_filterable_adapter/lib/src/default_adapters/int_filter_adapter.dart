@@ -1,14 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:filterable/filterable.dart';
-import 'package:firebase_filterable_adapter/src/firebase_filter_type_adapter.dart';
+import 'package:firebase_filterable_adapter/src/firebase_filter_adapter.dart';
+import 'package:firebase_filterable_adapter/src/helpers/helpers.dart';
 
 /// Firebase's [IntFilter] Adapter
-class FirebaseIntFilterAdapter extends FirebaseFilterTypeAdapter<IntFilter> {
+class FirebaseIntFilterAdapter extends FirebaseFilterAdapter<IntFilter> {
   @override
   Query<Map<String, dynamic>> getFilteredData(
     Query<Map<String, dynamic>> data,
-    String fieldId,
     IntFilter filter, {
+    required List<String> fieldPath,
     required bool descending,
   }) {
     // CanFilter based on:
@@ -22,7 +23,7 @@ class FirebaseIntFilterAdapter extends FirebaseFilterTypeAdapter<IntFilter> {
     if (!canFilter) return data;
 
     return data.where(
-      fieldId,
+      getFieldIdFromFieldPath(fieldPath),
       isEqualTo: filter.value,
     );
   }

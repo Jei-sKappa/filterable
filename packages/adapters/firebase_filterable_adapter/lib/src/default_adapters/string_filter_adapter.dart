@@ -1,16 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:filterable/filterable.dart';
-import 'package:firebase_filterable_adapter/src/firebase_filter_type_adapter.dart';
-import 'package:firebase_filterable_adapter/src/helpers/firebase_maybe_order_by.dart';
+import 'package:firebase_filterable_adapter/src/firebase_filter_adapter.dart';
+import 'package:firebase_filterable_adapter/src/helpers/helpers.dart';
 
 /// Firebase's [StringFilter] Adapter
-class FirebaseStringFilterAdapter
-    extends FirebaseFilterTypeAdapter<StringFilter> {
+class FirebaseStringFilterAdapter extends FirebaseFilterAdapter<StringFilter> {
   @override
   Query<Map<String, dynamic>> getFilteredData(
     Query<Map<String, dynamic>> data,
-    String fieldId,
     StringFilter filter, {
+    required List<String> fieldPath,
     required bool descending,
   }) {
     var fixedStringQuery = filter.value;
@@ -41,6 +40,8 @@ class FirebaseStringFilterAdapter
     if (!canFilter) return data;
 
     //! Can Filter
+
+    final fieldId = getFieldIdFromFieldPath(fieldPath);
 
     switch (filter.mode) {
       case StringFilterMode.contains:

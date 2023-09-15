@@ -1,8 +1,8 @@
-import 'package:filterable/src/type_filterables/type_filterable.dart';
+import 'package:filterable/src/range_filterable.dart';
 
 /// A [IntRangeFilter]
 /// that allows to filter projects by date
-class IntRangeFilter extends TypeRangeFilterable<int> {
+class IntRangeFilter implements RangeFilterable<int> {
   /// Creates a intFilter
   IntRangeFilter(
     this.min,

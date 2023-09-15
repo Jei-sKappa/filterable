@@ -1,19 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:filterable/filterable.dart';
-import 'package:firebase_filterable_adapter/src/firebase_filter_type_adapter.dart';
-import 'package:firebase_filterable_adapter/src/helpers/firebase_maybe_order_by.dart';
+import 'package:firebase_filterable_adapter/src/firebase_filter_adapter.dart';
+import 'package:firebase_filterable_adapter/src/helpers/helpers.dart';
 
 /// Firebase's [DateTimeRangeFilter] Adapter
 class FirebaseDateRangeFilterAdapter
-    extends FirebaseFilterTypeAdapter<DateTimeRangeFilter> {
+    extends FirebaseFilterAdapter<DateTimeRangeFilter> {
   @override
   Query<Map<String, dynamic>> getFilteredData(
     Query<Map<String, dynamic>> data,
-    String fieldId,
     DateTimeRangeFilter filter, {
+    required List<String> fieldPath,
     required bool descending,
   }) {
     var query = data;
+
+    final fieldId = getFieldIdFromFieldPath(fieldPath);
 
     if (filter.min != null) {
       query = query
