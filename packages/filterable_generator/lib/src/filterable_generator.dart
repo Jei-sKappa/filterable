@@ -38,11 +38,11 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       'Please, provide another name for $filterDartType or remove it.';
 
   String _getFilterDartType(String currentFilterDartType) {
-    return currentFilterDartType.replaceAll('<', 'Of')
-    .replaceAll('>', '')
-    .replaceAll(',', 'And')
-    .replaceAll(' ', '')
-    ;
+    return currentFilterDartType
+        .replaceAll('<', 'Of')
+        .replaceAll('>', '')
+        .replaceAll(',', 'And')
+        .replaceAll(' ', '');
   }
 
   @override
@@ -89,9 +89,37 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
       classFields = classData.fields!;
     }
 
+    for (final fieldData in classFields) {
+      if (fieldData.ignoreAnnotations.isNotEmpty) {
+        if (fieldData.ignoreAnnotations.length >= 2) {
+          throw StateError(
+            '(${_codeAnsi("${fieldData.type} ${fieldData.name}")}) '
+            'Cannot have more than one [Ignore] annotation. '
+            'Please, remove the unnecessary annotation.',
+          );
+        }
+        if ([
+          ...fieldData.rangeFilters,
+          ...fieldData.valueFilters,
+          ...fieldData.customFilters,
+        ].isNotEmpty) {
+          throw StateError(
+            '(${_codeAnsi("${fieldData.type} ${fieldData.name}")}) '
+            'Cannot have both [Ignore] and [RangeFilter], [ValueFilter] '
+            'or [CustomFilter]. '
+            'Please, remove the [Ignore] annotation or the other ones.',
+          );
+        }
+      }
+    }
+
     // Create a list of all filters
     final filters = <_FilterData>[];
     for (final fieldData in classFields) {
+      if (fieldData.ignoreAnnotations.firstOrNull != null) {
+        continue;
+      }
+
       var hasAddedFilter = false;
 
       // Remove Nullability from Type
@@ -603,19 +631,28 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
 
     buffer.writeln();
 
+    final fieldsToGenerate = <FieldData>[];
+    for (final fieldData in classFields) {
+      final maybeIgnore = fieldData.ignoreAnnotations.firstOrNull;
+
+      if (maybeIgnore == null || !maybeIgnore.ignoreField) {
+        fieldsToGenerate.add(fieldData);
+      }
+    }
+
     // enum Start
     buffer.writeln('/// Fields of ${classData.name}');
     buffer.writeln('enum $generatedEnumName {');
 
     // enum fields
-    for (var i = 0; i < classFields.length; i++) {
-      final fieldData = classFields[i];
+    for (var i = 0; i < fieldsToGenerate.length; i++) {
+      final fieldData = fieldsToGenerate[i];
       buffer.writeln('/// The ${fieldData.name} of [${classData.name}]');
       buffer.writeln(
         "${fieldData.name}('${fieldData.fieldKey?.key ?? fieldData.name}')",
       );
       // Line Terminator
-      if (i == classFields.length - 1) {
+      if (i == fieldsToGenerate.length - 1) {
         buffer.writeln(';');
       } else {
         buffer.writeln(',');
@@ -660,7 +697,7 @@ class FilterableGenerator extends GeneratorForAnnotation<FilterableGen> {
     buffer.writeln('switch (field) {');
 
     //
-    for (final fieldData in classFields) {
+    for (final fieldData in fieldsToGenerate) {
       buffer.writeln('case $generatedEnumName.${fieldData.name}:');
       buffer.writeln('return ${fieldData.name};');
     }

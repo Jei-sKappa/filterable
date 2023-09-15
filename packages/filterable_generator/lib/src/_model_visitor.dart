@@ -10,6 +10,7 @@ import 'package:source_gen/source_gen.dart';
 const _rangeFilterAnnotation = TypeChecker.fromRuntime(RangeFilter);
 const _valueFilterAnnotation = TypeChecker.fromRuntime(ValueFilter);
 const _customFilterAnnotation = TypeChecker.fromRuntime(CustomFilter);
+const _ignoreAnnotation = TypeChecker.fromRuntime(Ignore);
 const _fieldKeyAnnotation = TypeChecker.fromRuntime(FieldKey);
 
 class ModelVisitor extends SimpleElementVisitor<void> {
@@ -57,7 +58,9 @@ class FieldData {
     required this.rangeFilters,
     required this.valueFilters,
     required this.customFilters,
+    required this.ignoreAnnotations,
     required this.fieldKey,
+
   });
 
   factory FieldData.fromElement(Element element) {
@@ -77,6 +80,13 @@ class FieldData {
       return CustomFilter.named(
         name,
         filter: filter,
+      );
+    }
+
+    Ignore getIgnoreAnnotation(DartObject annotation) {
+      final ignoreField = annotation.getField('ignoreField')!.toBoolValue()!;
+      return Ignore(
+        ignoreField: ignoreField,
       );
     }
 
@@ -118,6 +128,14 @@ class FieldData {
       customAnnotations.add(customFilter);
     });
 
+    // Ignore
+    final ignoreAnnotations = <Ignore>[];
+    _ignoreAnnotation.annotationsOfExact(element).forEach((annotation) {
+      final ignoreAnnotation = getIgnoreAnnotation(annotation);
+      ignoreAnnotations.add(ignoreAnnotation);
+    });
+    
+
     // FieldKey
     FieldKey? fieldKey;
     _fieldKeyAnnotation.annotationsOfExact(element).forEach((annotation) {
@@ -131,6 +149,7 @@ class FieldData {
       rangeFilters: rangeAnnotations,
       valueFilters: valueAnnotations,
       customFilters: customAnnotations,
+      ignoreAnnotations: ignoreAnnotations,
       fieldKey: fieldKey,
     );
   }
@@ -140,5 +159,6 @@ class FieldData {
   List<RangeFilter> rangeFilters;
   List<ValueFilter> valueFilters;
   List<CustomFilter> customFilters;
+  List<Ignore> ignoreAnnotations;
   FieldKey? fieldKey;
 }
