@@ -18,11 +18,11 @@ class IntFilter implements ValueFilterable<int?> {
 
   /// Creates a copy of this IntFilter with the given fields replaced
   IntFilter copyWith({
-    int? value,
+    int? Function()? value,
     bool? allowNull,
   }) =>
       IntFilter(
-        value ?? this.value,
+        value != null ? value() : this.value,
         allowNull: allowNull ?? this.allowNull,
       );
 }

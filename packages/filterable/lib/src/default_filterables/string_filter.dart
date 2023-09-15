@@ -44,14 +44,14 @@ class StringFilter implements ValueFilterable<String?> {
 
   /// Creates a copy of this StringFilter with the given fields replaced
   StringFilter copyWith({
-    String? value,
+    String? Function()? value,
     bool? allowNull,
     StringFilterMode? mode,
     bool? matchWithLowercase,
     bool? enableTrim,
   }) =>
       StringFilter(
-        value ?? this.value,
+        value != null ? value() : this.value,
         allowNull: allowNull ?? this.allowNull,
         mode: mode ?? this.mode,
         matchWithLowercase: matchWithLowercase ?? this.matchWithLowercase,
