@@ -18,11 +18,11 @@ class DateTimeFilter implements ValueFilterable<DateTime?> {
 
   /// Creates a copy of this DateTimeFilter with the given fields replaced
   DateTimeFilter copyWith({
-    DateTime? value,
+    DateTime? Function()? value,
     bool? allowNull,
   }) =>
       DateTimeFilter(
-        value ?? this.value,
+        value != null ? value() : this.value,
         allowNull: allowNull ?? this.allowNull,
       );
 }

@@ -8,85 +8,119 @@ part of 'my_class.dart';
 // FilterableGenerator
 // **************************************************************************
 
-/// Filter of MyClass
+/// {@template MyClass}
+/// [MyClass]'s [Filterable]
+/// {@endtemplate}
 class MyClassFilterable extends Filterable {
+  /// {@macro MyClass}
   MyClassFilterable({
-    /// Parameters used by myStringValFilter to filter [MyClass]s
-    required String myStringVal,
-
-    /// Parameters used by field2Filter to filter [MyClass]s
-    required int field2,
-
-    /// Parameters used by field3Filter to filter [MyClass]s
-    required int field3,
-
-    /// Parameters used by field4Filter to filter [MyClass]s
-    required int? field4,
-  })  : myStringValFilter = StringFilter(
-          myStringVal,
-        ),
-        field2Filter = IntFilter(
-          field2,
-        ),
-        field3Filter = IntFilter(
-          field3,
-        ),
-        field4Filter = IntFilter(
-          field4,
+    /// Parameters used by myIntFilter to filter [MyClass]s
+    required int myInt,
+  }) : myIntFilter = IntFilter(
+          myInt,
         );
 
-  final StringFilter myStringValFilter;
-
-  final IntFilter field2Filter;
-
-  final IntFilter field3Filter;
-
-  final IntFilter field4Filter;
+  /// The filter for [MyClass]'s myInt
+  final IntFilter myIntFilter;
 
   @override
   List<FilterableField> get filters => [
         FilterableField(
-          fieldId: 'myStringVal',
-          typeFilterable: myStringValFilter,
-        ),
-        FilterableField(
-          fieldId: 'field2',
-          typeFilterable: field2Filter,
-        ),
-        FilterableField(
-          fieldId: 'field3',
-          typeFilterable: field3Filter,
-        ),
-        FilterableField(
-          fieldId: 'field4',
-          typeFilterable: field4Filter,
+          fieldId: MyClassField.myInt.id,
+          typeFilterable: myIntFilter,
         ),
       ];
 
+  /// A wrapper around [MyClassFilterable].[filter].
+  /// The only difference is that [safeFilter]
+  /// require to pass all the necessary adapters in
+  /// order to correctly filter the Object.
+  ///
+  /// This totally* excludes runtime errors.
+  ///
+  /// (*) This is not 100% true, because it depends on
+  /// your implementation of the adapters.
+  T safeFilter<T>(
+    T data, {
+    bool descending = false,
+    required List<String> fieldPath,
+    required MyClassAdapters<T> adapterGroup,
+  }) =>
+      super.filter(
+        data,
+        fieldPath: fieldPath,
+        descending: descending,
+        adapters: adapterGroup.adapters,
+      );
+
+  /// Creates a copy of [MyClassFilterable] with
+  /// the specified fields replaced with the new values.
   MyClassFilterable copyWith({
-    String? myStringVal,
-    int? field2,
-    int? field3,
-    int? Function()? field4,
+    int? myInt,
   }) =>
       MyClassFilterable(
-        /// It is used (myStringValFilter.value)! because
-        /// [myStringValFilter.value] corresponds to [myStringVal]
+        /// It is used (myIntFilter.value)! because
+        /// [myIntFilter.value] corresponds to [myInt]
         /// which is managed exclusively by [MyClassFilterable]
         /// and, as requested by the constructor, it cannot be null
-        myStringVal: myStringVal ?? (myStringValFilter.value)!,
-
-        /// It is used (field2Filter.value)! because
-        /// [field2Filter.value] corresponds to [field2]
-        /// which is managed exclusively by [MyClassFilterable]
-        /// and, as requested by the constructor, it cannot be null
-        field2: field2 ?? (field2Filter.value)!,
-
-        /// It is used (field3Filter.value)! because
-        /// [field3Filter.value] corresponds to [field3]
-        /// which is managed exclusively by [MyClassFilterable]
-        /// and, as requested by the constructor, it cannot be null
-        field3: field3 ?? (field3Filter.value)!,
-        field4: field4 != null ? field4() : field4Filter.value,
+        myInt: myInt ?? (myIntFilter.value)!,
       );
+}
+
+/// {@template MyClassAdapters}
+/// [MyClass]'s [FilterAdapterGroup].
+/// Used to generate the safeFilter function.
+/// {@endtemplate}
+class MyClassAdapters<T> extends FilterAdapterGroup<T> {
+  /// {@macro MyClassAdapters}
+  MyClassAdapters({
+    required this.intFilterAdapter,
+  }) : super([
+          intFilterAdapter,
+        ]);
+
+  /// [IntFilter]'s [FilterAdapter]
+  final FilterAdapter<T, IntFilter> intFilterAdapter;
+}
+
+/// Fields of MyClass
+enum MyClassField {
+  /// The myInt of [MyClass]
+  myInt('myInt'),
+
+  /// The myString of [MyClass]
+  myString('myString');
+
+  const MyClassField(this.id);
+
+  /// The identifier of the field
+  final String id;
+}
+
+/// Extension on [MyClass] that adds:
+/// - [getValueFromField]
+/// - [getAllValuesFromFields]
+extension MyClassGetValueFromFields on MyClass {
+  /// Returns the value of an instance of [MyClass]
+  /// based on a [MyClassField]
+  dynamic getValueFromField(MyClassField field) {
+    switch (field) {
+      case MyClassField.myInt:
+        return myInt;
+      case MyClassField.myString:
+        return myString;
+    }
+  }
+
+  /// Returns a list of values of an instance of
+  /// [MyClass] based on a list of
+  /// [MyClassField]
+  List<dynamic> getAllValuesFromFields(List<MyClassField> fields) {
+    final values = <dynamic>[];
+    for (final field in fields) {
+      values.add(getValueFromField(field));
+    }
+
+    return values;
+  }
 }

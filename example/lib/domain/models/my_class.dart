@@ -3,16 +3,30 @@ import 'package:filterable_annotation/filterable_annotation.dart';
 
 part 'my_class.filterable.dart';
 
-@filterable
+@FilterableGen(
+  generateFields: true,
+  generateGetValueFromFieldsExtension: true,
+)
 class MyClass {
   MyClass(
-    this.myStringVal, {
-    required this.field2,
-    this.field3 = 0,
-    this.field4,
-  });
-  final String myStringVal;
-  final int field2;
-  final int field3;
-  final int? field4;
+    this.myInt,
+    this.myString,
+    // this.myList,
+    // this.myMap,
+    // this.myComplexMap,
+    // this.myVeryComplexMap,
+  );
+
+  final int myInt;
+
+  @Ignore(ignoreField: false)
+  final String myString;
+  // final List<String> myList;
+  // final Map<String, dynamic> myMap;
+  // final Map<String, List<int>> myComplexMap;
+  // final Map<String, List<Map<String, int>>> myVeryComplexMap;
 }
+
+// void main(){
+//   MapOf_StringAndListOf_MapOf_StringAndint___ myFiter;
+// }
